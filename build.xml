@@ -1,0 +1,79 @@
+<project name="jest" default="jestify">
+
+	<property name="src.dir"       value="src/main/java" />
+	<property name="resources.dir" value="src/main/resources" />
+	<property name="classes.dir"   value="target/classes" />
+	<property name="lib.dir"       value="lib" />
+	
+	<path id="compile.classpath">
+		<fileset dir="${lib.dir}">
+			<include name="*.jar" />
+		</fileset>
+	</path>
+
+
+	<target name="check-app" description="check application resources">
+		<condition property="app.is.set">
+			<isset property="app" />
+		</condition>
+		<fail unless="app.is.set" message="*ERROR: Application is not specified. Use -Dapp={app} to specify an Application archive to jestify" />
+
+		<condition property="app.jar.exists">
+			<available file="${app}" property="file">
+			</available>
+		</condition>
+		<fail unless="app.jar.exists" message="Application archive specifed ${app} does not exist" />
+	
+	    <condition property="target" else="${app}">
+	    		<isset property="target"/>
+	    </condition>
+	</target>
+
+	<target name="jestify" depends="check-app,jar" description="add JEST to an application archive">
+		<mkdir dir="tmp"/>
+		<unzip src="${app}" dest="tmp/WEB-INF"/>
+		<move file="jest.jar" todir="tmp/WEB-INF/lib"></move>
+		<copy todir="tmp/WEB-INF/lib">
+			<fileset dir="${lib.dir}">
+				<exclude name="*servlet*.jar"/>
+			</fileset>
+		</copy>
+		<copy todir="tmp/WEB-INF">
+			<fileset dir="${resources.dir}"/>
+		</copy>
+		
+		<loadresource property="target.war">
+		  <propertyresource name="target"/>
+		  <filterchain>
+		    <tokenfilter>
+		      <filetokenizer/>
+		      <replacestring from="jar" to="war"/>
+		    </tokenfilter>
+		  </filterchain>
+		</loadresource>
+		
+		<jar destfile="${target.war}">
+			<fileset dir="tmp">
+			</fileset>
+		</jar>
+		<delete dir="tmp" failonerror="false"/>
+	</target>
+	
+	
+	<target name="compile" description="compiles JEST servlet">
+		<mkdir dir="${classes.dir}"/>
+		<javac srcdir="${src.dir}" 
+			destdir="${classes.dir}"
+			includeantruntime="false">
+			<classpath refid="compile.classpath"></classpath>
+		</javac>
+	</target>
+	
+	<target name="jar" depends="compile" description="creates JEST jar">
+		<jar destfile="jest.jar">
+			<fileset dir="${classes.dir}"></fileset>
+		
+		</jar>
+		</target>
+	
+</project>

@@ -1,0 +1,50 @@
+<!-- Builds a demo application                                         -->
+<!-- Assumes the source tree follows standard Maven directory layout   -->
+<!-- The output is a jar archive with dependencies included            -->
+
+<project name="jest-demo" default="jar">
+
+	<property name="src.dir"       value="src/main/java" />
+	<property name="resources.dir" value="src/main/resources" />
+	<property name="target.dir"    value="target" />
+	<property name="lib.dir"       value="lib" />
+
+	<property name="target.jar" value="${ant.project.name}.jar" />
+
+	<path id="compile.classpath">
+		<fileset dir="${lib.dir}">
+			<include name="*.jar" />
+		</fileset>
+	</path>
+
+	<target name="check-layout">
+		<condition property="lib.dir.exists">
+			<available file="${lib.dir}" type="dir">
+			</available>
+		</condition>
+		
+		<fail unless="lib.dir.exists" message="${lib.dir} directory does not exist"/>
+	</target>
+
+	<target name="compile" depends="check-layout">
+		<mkdir dir="${target.dir}/classes" />
+		<javac srcdir="${src.dir}" 
+			   destdir="${target.dir}/classes" 
+			   includeantruntime="false">
+			<classpath refid="compile.classpath" />
+		</javac>
+	</target>
+	
+	<target name="jar" depends="compile">
+		<jar destfile="${target.jar}">
+			<fileset dir="${target.dir}">
+				<include name="classes/**/*.class"/>
+			</fileset>
+			<fileset  dir="${resources.dir}">
+			</fileset>
+			<fileset  dir="${basedir}">
+				<include name="lib/*.jar"/>
+			</fileset>
+		</jar>
+	</target>
+</project>
