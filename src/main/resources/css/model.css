@@ -1,0 +1,35 @@
+.entity {
+	fill:none;
+	stroke:gray;
+	padding:20;
+	margin:20;
+	
+	rx:20;
+	ry:20;
+	
+}
+
+.entityname {
+	font-size:1.2em;
+	fill:white;
+}
+
+.entityheader {
+	fill:gray;
+	
+}
+
+
+
+.attrtype {
+	color:red;
+	fill:red;
+}
+
+.attrname {
+	color:blue;
+	fill:blue;
+	padding:20px;
+	margin:20px;
+}
+

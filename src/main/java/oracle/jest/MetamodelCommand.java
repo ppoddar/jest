@@ -2,31 +2,30 @@ package oracle.jest;
 
 import java.io.IOException;
 
-import javax.persistence.metamodel.EntityType;
 import javax.persistence.metamodel.Metamodel;
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.json.JSONObject;
 
-public class MetamodelCommand implements JESTCommand {
-
-    public MetamodelCommand() {
-        // TODO Auto-generated constructor stub
+public class MetamodelCommand extends JESTCommand {
+    public MetamodelCommand(ServletContext ctx, HttpServletRequest request, HttpServletResponse response) 
+     throws ServletException {
+        super(ctx, request, response);
     }
 
     @Override
-    public void execute(HttpServletRequest request, HttpServletResponse response, JESTContext ctx)
-            throws ServletException, IOException {
-        
-        Metamodel model = ctx.getDomainModel();
-        JSONObject result = new JSONObject();
-        for (EntityType<?> t : model.getEntities()) {
-            result.accumulate("types", t.getName());
-        }
-        response.setStatus(200);
+    public void execute() throws ServletException, IOException {
+        Metamodel model = getDomainModel();
+        ResponseTransformer transformer = getResponseTransformer();
+        JSONObject result = transformer.transform(model);
         result.write(response.getWriter());
+        
+        response.setStatus(200);
     }
+    
+    
 
 }

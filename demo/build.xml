@@ -1,6 +1,7 @@
 <!-- Builds a demo application                                         -->
 <!-- Assumes the source tree follows standard Maven directory layout   -->
-<!-- The output is a jar archive with dependencies included            -->
+<!-- All dependencies are available under lib/ directory               -->
+<!-- The output is a jar archive with dependencies in lib/ folder      -->
 
 <project name="jest-demo" default="jar">
 
@@ -17,16 +18,8 @@
 		</fileset>
 	</path>
 
-	<target name="check-layout">
-		<condition property="lib.dir.exists">
-			<available file="${lib.dir}" type="dir">
-			</available>
-		</condition>
-		
-		<fail unless="lib.dir.exists" message="${lib.dir} directory does not exist"/>
-	</target>
 
-	<target name="compile" depends="check-layout">
+	<target name="compile">
 		<mkdir dir="${target.dir}/classes" />
 		<javac srcdir="${src.dir}" 
 			   destdir="${target.dir}/classes" 
@@ -36,11 +29,13 @@
 	</target>
 	
 	<target name="jar" depends="compile">
-		<jar destfile="${target.jar}">
+		<copy todir="${target.dir}/classes">
+			<fileset dir="${resources.dir}"/>
+		</copy>
+		<echo message="creating ${target.jar}"></echo>
+		<jar destfile="${target.jar}" filesonly="true">
 			<fileset dir="${target.dir}">
-				<include name="classes/**/*.class"/>
-			</fileset>
-			<fileset  dir="${resources.dir}">
+				<include name="classes/**/*"/>
 			</fileset>
 			<fileset  dir="${basedir}">
 				<include name="lib/*.jar"/>

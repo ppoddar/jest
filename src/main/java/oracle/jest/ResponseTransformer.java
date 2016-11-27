@@ -3,13 +3,20 @@ package oracle.jest;
 import org.json.JSONObject;
 
 /**
- * Transforms an object to a {@link JSONObject}.
+ * Transforms a persistent object to a {@link JSONObject JSON} 
+ * in {@link JESTContext}.
  * 
  * @author pinaki poddar
  *
  */
 public interface ResponseTransformer {
-    JSONObject transform(Object pObject, JESTContext ctx);
-    JSONObject error(Throwable ex, JESTContext ctx);
+    /**
+     * Transforms the given object to a JSON representation.
+     * 
+     * @param pObject can be a persistence instance or type 
+     * @return
+     */
+    JSONObject transform(Object pObject);
+    JSONObject error(Throwable ex);
 
 }

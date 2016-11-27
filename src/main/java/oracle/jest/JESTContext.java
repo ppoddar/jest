@@ -1,64 +1,48 @@
 package oracle.jest;
 
-import java.util.Set;
-
 import javax.persistence.EntityManager;
-import javax.persistence.metamodel.EntityType;
-import javax.persistence.metamodel.Metamodel;
-import javax.persistence.metamodel.Type.PersistenceType;
+import javax.persistence.EntityManagerFactory;
 import javax.servlet.ServletContext;
 
+import org.json.JSONObject;
+
 /**
- * A context brings 
- * <ul>
- *   <li>Servlet Context
- *   <li>Persistence Contxet
- *   <li>Response Transformer
- *  </ul>
+ * A context associates an {@link ServletContext execution context} for
+ * HTTP request-response with that of {@link EntityManagerFactory 
+ * persistence operation}.
+ * <p>
+ * The context also provides a {@link ResponseTransformer protocol} to
+ * transform HTTP response to {@link JSONObject JSON format}.
  *  
  * @author pinaki poddar
  *
  */
-public class JESTContext {
-    private final EntityManager persistenceContext;
-    private Metamodel persistenceDomainModel;
-    private final ServletContext servletContext;
-    private final ResponseTransformer responseTransformer;
+public interface JESTContext {
+    public static final String PERSISTENCE_UNIT     = "emf";
+    public static final String PERSISTENCE_CONTEXT  = "em";
+    public static final String RESPONSE_TRANSFORMER = "response-transformer";
     
-    public JESTContext(ServletContext ctx, EntityManager em, ResponseTransformer rp) {
-        persistenceContext = em;
-        servletContext = ctx;
-        responseTransformer = rp;
-    }
+    public static final String HEADER_ACCEPT = "Accept";
     
-    public ServletContext getServletContext() {
-        return servletContext;
-    }
+    public static final String MIMETYPE_JSON_API = "application/vnd.api+json";
     
-    public EntityManager getPersistenceContext() {
-        return persistenceContext;
-    }
+    /**
+     * Gets the persistence unit associated with this context.
+     * A persistence unit is always associated with this context.
+     * 
+     * @return
+     */
+    public EntityManagerFactory getPersistenceUnit();
     
-    public ResponseTransformer getResponseTransformer() {
-        return responseTransformer;
-    }
+    /**
+     * Gets the persistence context.
+     * Creates and associates the persistence context if it is not 
+     * associated.
+     *  
+     * @return
+     */
+    public EntityManager getPersistenceContext();
     
-    public Metamodel getDomainModel() {
-        if (persistenceDomainModel == null) {
-            persistenceDomainModel = getPersistenceContext()
-                    .getEntityManagerFactory()
-                    .getMetamodel();
-        }
-        return persistenceDomainModel;
-    }
-    
-    public EntityType<?> resolveTypeByName(String entityTypeName) {
-        Set<EntityType<?>> types = getDomainModel().getEntities();
-        for (EntityType<?> t : types) {
-            if (t.getName().equals(entityTypeName)) {
-                return t;
-            }
-        }
-        return null;
-    }
+    public ResponseTransformer getResponseTransformer();
+
 }

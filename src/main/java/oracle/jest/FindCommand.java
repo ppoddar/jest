@@ -1,37 +1,42 @@
 package oracle.jest;
 
 import java.io.IOException;
-import java.util.Set;
 
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.metamodel.EntityType;
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.json.JSONObject;
 
-public class FindCommand implements JESTCommand {
+public class FindCommand extends JESTCommand {
+
+    public FindCommand(ServletContext ctx, HttpServletRequest request, HttpServletResponse response) 
+        throws ServletException {
+        super(ctx, request, response);
+    }
+
 
     @Override
-    public void execute(HttpServletRequest request, HttpServletResponse response, 
-            JESTContext ctx) throws ServletException,IOException {
+    public void execute() throws ServletException,IOException {
         String[] splats = request.getPathInfo().split("/");
         String entityTypeName = splats[0];
-        EntityManager em = ctx.getPersistenceContext();
-        EntityType<?> cls = ctx.resolveTypeByName(entityTypeName);
+        EntityManager em = getPersistenceContext();
+        EntityType<?> eType = resolveTypeByName(entityTypeName);
         Object pObject = null;
         if (splats.length > 1) {
-            Object id = convert(splats[1], cls.getIdType().getJavaType());
-            pObject = em.find(cls.getJavaType(), id);
+            Object id = convert(splats[1], eType.getIdType().getJavaType());
+            pObject = em.find(eType.getJavaType(), id);
             for (int i = 2; i < splats.length; i++) {
                 pObject = Reflection.getValue(pObject, splats[i]);
                 
             }
         } else {
             CriteriaQuery<?> q = em.getCriteriaBuilder().createQuery();
-            q.from(cls);
+            q.from(eType);
             em.createQuery(q).getResultList();
         }
 
@@ -39,10 +44,10 @@ public class FindCommand implements JESTCommand {
         if (pObject == null) {
             response.setStatus(404);
         } else {
-            ResponseTransformer transfomer = ctx.getResponseTransformer();
-            JSONObject json = transfomer.transform(pObject, ctx);
+            response.setStatus(200);
+            ResponseTransformer transfomer = getResponseTransformer();
+            JSONObject json = transfomer.transform(pObject);
             json.write(response.getWriter());
-            
         }
 
     }
@@ -58,7 +63,4 @@ public class FindCommand implements JESTCommand {
         }
         return data;
     }
-    
-    
-
 }

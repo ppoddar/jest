@@ -1,79 +1,145 @@
 <project name="jest" default="jestify">
 
-	<property name="src.dir"       value="src/main/java" />
+	<property name="src.dir" value="src/main/java" />
 	<property name="resources.dir" value="src/main/resources" />
-	<property name="classes.dir"   value="target/classes" />
-	<property name="lib.dir"       value="lib" />
+	<property name="classes.dir" value="target/classes" />
+	<property name="jest.jar" value="jest.jar" />
+	<property name="lib.dir" value="lib" />
 	
+	<property file="build.properties"></property>
+	
+	
+	<include file="${appserver.build.xml}" 
+		as="${appserver.name}" 
+		optional="false"/>
+
 	<path id="compile.classpath">
 		<fileset dir="${lib.dir}">
 			<include name="*.jar" />
 		</fileset>
 	</path>
+	
+	<target name="fetch-dependencies">
+		<mkdir dir="${lib.dir}"/>
+		<get dest="${lib.dir}/servlet-api.jar" 
+			src="https://repo1.maven.org/maven2/org/apache/tomcat/servlet-api/6.0.48/servlet-api-6.0.48.jar"
+			usetimestamp="true"
+		/>
+		<get dest="${lib.dir}/json.jar"
+			 src="https://repo1.maven.org/maven2/org/json/json/20160810/json-20160810.jar"
+			 usetimestamp="true"
+		/>
+		<!-- JPA 2.0 jar not available in Maven
+		<get dest="${lib.dir}/jpa.jar"
+			 src="http://central.maven.org/maven2/javax/persistence/persistence-api/1.0.2/persistence-api-1.0.2.jar"
+			 usetimestamp="true"
+		/>
+		-->
 
+	</target>
 
-	<target name="check-app" description="check application resources">
-		<condition property="app.is.set">
-			<isset property="app" />
+	<!-- checks command line arguments are defined            -->
+	<!-- and fails on missing property                        -->
+	<target name="check-app" description="check application properties">
+		<echo message="Adding jest to:"/>
+		<echo message="Application name=${app.name}"/>
+		<echo message="Application archive ${app.jar}"/>
+
+		<condition property="app.name.is.set">
+			<isset property="app.name" />
 		</condition>
-		<fail unless="app.is.set" message="*ERROR: Application is not specified. Use -Dapp={app} to specify an Application archive to jestify" />
+		<fail unless="app.name.is.set" 
+			  message="***ERROR: Application name is not specified. Use -Dapp.name=${Application name to deploy}" />
+		
+		<condition property="app.jar.is.set">
+			<isset property="app.jar" />
+		</condition>
+		<fail unless="app.jar.is.set" 
+			  message="***ERROR: Application archive is not specified. Use -Dapp.jar={application jar file location}" />
 
 		<condition property="app.jar.exists">
-			<available file="${app}" property="file">
+			<available file="${app.jar}" property="file">
 			</available>
 		</condition>
-		<fail unless="app.jar.exists" message="Application archive specifed ${app} does not exist" />
-	
-	    <condition property="target" else="${app}">
-	    		<isset property="target"/>
-	    </condition>
+		<fail unless="app.jar.exists" message="***ERROR: Application archive ${app.jar} does not exist" />
+
+		<property name="deploy.war" value="${app.name}.war"></property>
 	</target>
 
-	<target name="jestify" depends="check-app,jar" description="add JEST to an application archive">
-		<mkdir dir="tmp"/>
-		<unzip src="${app}" dest="tmp/WEB-INF"/>
-		<move file="jest.jar" todir="tmp/WEB-INF/lib"></move>
-		<copy todir="tmp/WEB-INF/lib">
+	<target name="jestify" 
+		    depends="check-app, createJar" 
+		    description="add JEST to an application archive">
+		<!-- collect all deployable resources under tmp -->
+		<echo message="Creating Web Application Archive ${deploy.war}"/>
+		<tempfile destdir="${java.io.tmpdir}" property="tmp.dir"/>
+		<mkdir dir="${tmp.dir}"/>
+		<unzip src="${app.jar}" dest="${tmp.dir}/WEB-INF" />
+		<property name="p.xml" value="classes/META-INF/persistence.xml"/>
+		
+		<available file="${tmp.dir}/WEB-INF/${p.xml}" 
+			property="p.xml.present"></available>
+		<fail unless="p.xml.present" 
+			message="Application package does not contain ${line.separator}${p.xml}" />
+		
+		<echo message="adding ${jest.jar} to application"/>
+		<move file="${jest.jar}" todir="${tmp.dir}/WEB-INF/lib" verbose="false"/>
+		<echo message="adding jest dependencies to application" level="debug"/>
+		<copy todir="${tmp.dir}/WEB-INF/lib" verbose="false">
 			<fileset dir="${lib.dir}">
-				<exclude name="*servlet*.jar"/>
+				<include name="*json*.jar" />
 			</fileset>
 		</copy>
-		<copy todir="tmp/WEB-INF">
-			<fileset dir="${resources.dir}"/>
+		<copy todir="${tmp.dir}/WEB-INF" verbose="false">
+			<fileset dir="${resources.dir}" />
 		</copy>
-		
-		<loadresource property="target.war">
-		  <propertyresource name="target"/>
-		  <filterchain>
-		    <tokenfilter>
-		      <filetokenizer/>
-		      <replacestring from="jar" to="war"/>
-		    </tokenfilter>
-		  </filterchain>
-		</loadresource>
-		
-		<jar destfile="${target.war}">
-			<fileset dir="tmp">
+
+		<jar destfile="${deploy.war}">
+			<fileset dir="${tmp.dir}">
 			</fileset>
 		</jar>
-		<delete dir="tmp" failonerror="false"/>
+		<delete dir="${tmp.dir}" failonerror="false"></delete>
 	</target>
-	
-	
-	<target name="compile" description="compiles JEST servlet">
-		<mkdir dir="${classes.dir}"/>
+
+
+	<target name="compile" 
+		    depends="fetch-dependencies"
+	        description="compiles JEST servlet">
+		<mkdir dir="${classes.dir}" />
 		<javac srcdir="${src.dir}" 
-			destdir="${classes.dir}"
-			includeantruntime="false">
-			<classpath refid="compile.classpath"></classpath>
+			   destdir="${classes.dir}" 
+			   includeantruntime="false">
+			<classpath refid="compile.classpath">
+			</classpath>
 		</javac>
 	</target>
-	
-	<target name="jar" depends="compile" description="creates JEST jar">
-		<jar destfile="jest.jar">
-			<fileset dir="${classes.dir}"></fileset>
-		
+
+	<target name="createJar" depends="compile" description="creates JEST jar">
+		<jar destfile="${jest.jar}">
+			<fileset dir="${classes.dir}">
+			</fileset>
 		</jar>
-		</target>
+	</target>
+	
+	<target name="check-appserver">
+		<condition property="appserver.is.set">
+			<isset property="appserver.name"/>
+		</condition>
+		<fail unless="appserver.is.set" 
+			message="Application Server is no set ${line.separator}Specify appserver.name in build.properties file"/>
+		
+		<available file="${appserver.build}" property="appserver.build.available"></available>
+	
+	</target>
+	
+	<target name="deploy" depends="check-appserver, jestify">
+		<antcall target="${appserver.name}.deploy">
+			<param name="deploy.war" value="${deploy.war}"/>
+		</antcall>
+	</target>
+	<target name="undeploy" depends="check-appserver">
+		<antcall target="${appserver.name}.undeploy">
+			<param name="${app.name}" value="${deploy.war}"/>
+		</antcall>
+	</target>
 	
 </project>

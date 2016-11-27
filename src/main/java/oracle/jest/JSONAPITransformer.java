@@ -1,15 +1,14 @@
 package oracle.jest;
 
-import java.lang.reflect.Method;
-import java.util.Set;
-
 import javax.persistence.metamodel.Attribute;
+import javax.persistence.metamodel.EntityType;
 import javax.persistence.metamodel.ManagedType;
 import javax.persistence.metamodel.Metamodel;
 
 import org.json.JSONObject;
 
 public class JSONAPITransformer implements ResponseTransformer {
+    private static final String ATTR_TYPE_NAME = "name";
     private static final String ATTR_DATA = "data";
     private static final String ATTR_ERRORS = "errors";
     private static final String ATTR_META = "meta";
@@ -20,13 +19,33 @@ public class JSONAPITransformer implements ResponseTransformer {
     private static final String ATTR_RESOURCE_LINKS = "links";
     private static final String ATTR_RESOURCE_META = "meta";
     
+    private final JESTContext ctx;
     
-    public JSONAPITransformer() {
-        // TODO Auto-generated constructor stub
+    public JSONAPITransformer(JESTContext ctx) {
+        this.ctx = ctx;
     }
-
+    
+    JSONObject transformModel(Metamodel model) {
+        JSONObject result = new JSONObject();
+        for (EntityType<?> t : model.getEntities()) {
+            result.accumulate("types", transformType(t));
+        }
+        return result;
+    }
+    
+    JSONObject transformType(EntityType<?> type) {
+        JSONObject result = new JSONObject();
+        result.put(ATTR_TYPE_NAME, type.getName());
+        return result;
+    }
+    
     @Override
-    public JSONObject transform(Object pObject, JESTContext ctx) {
+    public JSONObject transform(Object pObject) {
+        if (Metamodel.class.isInstance(pObject)) 
+            return transformModel(Metamodel.class.cast(pObject));
+        if (EntityType.class.isInstance(pObject)) 
+            return transformType(EntityType.class.cast(pObject));
+        
         JSONObject result = new JSONObject();
         result.put(ATTR_DATA, new JSONObject());
         result.put(ATTR_ERRORS, new JSONObject());
@@ -55,7 +74,7 @@ public class JSONAPITransformer implements ResponseTransformer {
     }
 
     @Override
-    public JSONObject error(Throwable ex, JESTContext ctx) {
+    public JSONObject error(Throwable ex) {
         throw new AbstractMethodError();
     }
     
