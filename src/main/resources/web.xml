@@ -9,32 +9,15 @@
 		<servlet-name>jest</servlet-name>
 		<servlet-class>oracle.jest.JESTServlet</servlet-class>
 		<load-on-startup>1</load-on-startup>
-		<!-- JEST servlet is to be initialized with a persistence unit -->
-		<!-- The persistence unit is used by a different application   -->
-		<!-- deployed in the same container.                           -->
-		<!-- JESTServlet should be able to browse the domain model of  -->
-		<!-- used by the other application                             -->
-		<init-param>
-			<param-name>persistence-unit</param-name>
-			<param-value>app</param-value>
-		</init-param>
 	</servlet>
-	
-	<!-- The web application is deployed in servlet engine by jest     -->
-	<!-- Any url of the form http://server.com:8080/jest/abcd/xyz      -->
-	<!-- will be handled by JESTServlet. The servlet request path will -->
-	<!-- be /xyz/abc                                                   -->
 	
 	<servlet-mapping>
 		<servlet-name>jest</servlet-name>
-		<url-pattern>/*</url-pattern>
+		<url-pattern>/jest/*</url-pattern>
 	</servlet-mapping>
 	
-	<!-- A default path http://server.com:8080/{application-name}/ will be handled   -->
-	<!--  DefaultServlet. It will serve the static file jest.html      -->
-	<!--  IMPORTANT: The trailing / in URL is critical      -->
 	<welcome-file-list>
-		<welcome-file>jest.html</welcome-file>
+		<welcome-file>index.html</welcome-file>
 	</welcome-file-list>
 	
 	

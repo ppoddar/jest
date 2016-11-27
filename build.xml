@@ -90,7 +90,14 @@
 			</fileset>
 		</copy>
 		<copy todir="${tmp.dir}/WEB-INF" verbose="false">
-			<fileset dir="${resources.dir}" />
+			<fileset dir="${resources.dir}">
+				<include name="web.xml"/>
+			</fileset>
+		</copy>
+		<copy todir="${tmp.dir}" verbose="false">
+			<fileset dir="${resources.dir}">
+				<exclude name="web.xml"/>
+			</fileset>
 		</copy>
 
 		<jar destfile="${deploy.war}">
@@ -141,5 +148,9 @@
 			<param name="${app.name}" value="${deploy.war}"/>
 		</antcall>
 	</target>
+	
+	<target name="redeploy" depends="undeploy,deploy">
+	</target>
+
 	
 </project>
