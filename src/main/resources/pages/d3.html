@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <link rel="stylesheet" href="./css/model.css">
+</head>
+
+<body>
+
+
+<script src="https://d3js.org/d3.v4.js"></script>
+<script src="./scripts/model.js"></script>
+
+<script>
+
+var entityData = [
+     {
+       name:'Customer',
+       attributes:[
+     	{name:"name", type:"string"},
+     	{name:"address", type:"Address"}
+       ]
+     }];
+    
+ 
+//Create the SVG Viewport
+var canvas = d3.select('body').append('svg')
+		.attr('width', 400)
+		.attr('height', 400);
+	
+drawEntity(canvas, entityData);	
+
+    	
+    		
+</script>
+
+</body>
+</html>
+
