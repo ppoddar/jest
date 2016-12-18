@@ -5,11 +5,13 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.logging.Logger;
 
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -20,53 +22,71 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
-
+/**
+ * A servlet to process entities as REST document.
+ * <br>
+ * The servlet is based on Java Persistentce API (JPA) interface.
+ * On initialization the servelt scans the deployment unit for
+ * a persistent unit. A persistent unit is identified by existence
+ * of a <code>META-INF/persistence.xml</code> resource within the
+ * deployed package.
+ * <p>
+ * The servlet process HTTP requests via a set of {@link JESTCommand
+ * commands}. The servlet passes an {@link JESTContext execution context}
+ * before invoking a command.
+ * 
+ * @author pinaki poddar
+ *
+ */
 @SuppressWarnings("serial")
 public class JESTServlet extends HttpServlet {
     
+    private static final String PERSISTENCE_UNIT_RESOURCE = "META-INF/persistence.xml";
     private static final String PERSISTENCE_UNIT_NAME = "persistence-unit";
     
-    
-    
+    private static final Logger logger = Logger.getLogger("RUNTIME");
     
     @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
-        System.err.println(this + " Initializing ----------------------- ");
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
-        List<String> unitNames = scanResources(cl, "META-INF/persistence.xml");
-        System.err.println(this + " found " + unitNames.size() + " persistence units "+unitNames);
+        printResourceVisbility(cl, PERSISTENCE_UNIT_RESOURCE);
+        List<String> unitNames = scanResources(cl, PERSISTENCE_UNIT_RESOURCE);
+        logger.info("Found " + unitNames.size() + " persistence units " + unitNames);
         String unitName = "";
         if (unitNames.isEmpty()) {
-            throw new RuntimeException("No persistence unit found in deployed "
-                    + "application. A persistence unit is defined in a "
-                    + "META-INF/persistence.xml file and must be visible to "
-                    + "servlet at initialization");
+            throw new RuntimeException("No persistence unit found in " + 
+                    "deployed application. " +
+                    " A persistence unit is defined in " + PERSISTENCE_UNIT_RESOURCE +
+                    " and must be available in current deployment unit");
         } else if (unitNames.size() > 1) {
             unitName = config.getInitParameter(PERSISTENCE_UNIT_NAME);
             if (unitName == null) {
-                throw new RuntimeException("Found " + unitNames.size() 
-                        + " persistence units " + unitNames 
-                        + " in deployed application. "
-                        + " However " + PERSISTENCE_UNIT_NAME + " property "
-                        + " is not specified in deployment descriptor "
-                        + " to disambiguate among these units");
+                throw new RuntimeException(
+                        "Found " + unitNames.size() + " persistence units " +
+                        unitNames + " in deployed unit." +
+                        " However no persistent unit name is specified in" +  
+                        " deployment descriptor to distinguis a unit");
             } else if (!unitNames.contains(unitName)) {
-                throw new RuntimeException("Found " + unitNames.size() 
-                + " persistence units " + unitNames 
-                + " in deployed application. "
-                + " However persistent unit name " + unitName 
-                + " specified in deployment descriptor "
-                + " does not match any of these units");
+                throw new RuntimeException(
+                        "Found " + unitNames.size() + " persistence units " +
+                        unitNames + " in deployed unit." +
+                        " However persistent unit " + unitName + 
+                        " specified in deployment descriptor does not" +
+                        " match any of these units.");
             }
         } else {
             unitName = unitNames.get(0);
+            logger.info("Found persistent unit " + unitName + " in deployment unit");
             try {
+                logger.info("Resolving persistence unit " + unitName);
                 EntityManagerFactory emf = Persistence.createEntityManagerFactory(unitName);
-                System.err.println(this + " persistence unit resolved to "+emf);
+                logger.info(" persistence unit is resolved to "+ emf);
                 getServletContext().setAttribute(JESTContext.PERSISTENCE_UNIT, emf);
             } catch (Exception ex) {
-                throw new RuntimeException("Can not initialize persistence unit " + unitName, ex);
+                throw new RuntimeException("Can not resolve persistence unit " + 
+                        unitName, ex);
+                
             } 
         }
     }
@@ -87,12 +107,20 @@ public class JESTServlet extends HttpServlet {
     public void doGet(HttpServletRequest request, HttpServletResponse response) 
     throws ServletException {
           
+        
         String path = request.getPathInfo();
-        JESTCommand command = ROOT_PATH.equals(path) 
-                ? new MetamodelCommand(getServletContext(), request, response)
-                : new FindCommand(getServletContext(), request, response);
+        System.err.println("Received request GET " + path);
+        JESTContext ctx = new DefaultJESTContext(
+                getServletContext(), 
+                (EntityManagerFactory)getServletContext().getAttribute(JESTContext.PERSISTENCE_UNIT),
+                request, response);
+        
+        JESTCommand command = path == null || ROOT_PATH.equals(path) 
+                ? new MetamodelCommand(ctx)
+                : new FindCommand(ctx);
             
         try {
+            System.err.println("executing " + command.getClass().getName());
             command.execute();
         } catch (Exception ex) {
             command.close();
@@ -126,7 +154,7 @@ public class JESTServlet extends HttpServlet {
             }
         }
     }
-    
+   
     /**
      * Scans all persistence units visible to given classloader
      * and collects unit names.
@@ -165,8 +193,4 @@ public class JESTServlet extends HttpServlet {
         while (e.hasMoreElements()) list.add(e.nextElement());
         return list;
     }
-    
-    
-    
-
 }

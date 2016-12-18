@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <script src="./pages/scripts/placement.js"></script>
+</head>
+
+<body>
+<canvas id='canvas' width='200px' height='200px' style="border:1px solid red"></canvas>
+
+<script>
+  var canvas = document.getElementById('canvas');
+  var ctx = canvas.getContext('2d');
+  
+  var data = {'blocks':[
+  	{x:70, y:10, w:60, h:30},
+  	{x:15, y:40, w:30, h:20},
+  	{x:100, y:50, w:40, h:20}
+  	
+  ]};
+  //console.log('data ' + JSON.stringify(data));
+  
+  
+  var obstacles = data['blocks'];
+  //console.log(obstacles.length + ' blocks');
+  for (var i = 0; i < obstacles.length; i++) {
+  	var block = obstacles[i];
+  	//console.log('block ' + i + '=' + JSON.stringify(block));
+  	ctx.strokeStyle = "#000000";
+    ctx.fillStyle="#FFFFFF";
+  	ctx.fillRect(block.x, block.y, block.w, block.h);
+  	
+     ctx.stroke();
+  }
+  
+  var astar = new AStar();
+  var p1 = new Point(15,20);
+  var p2 = new Point(150, 45);
+  
+  ctx.beginPath();
+  ctx.moveTo(p1.x, p2.y);
+  ctx.lineTo(p2.x, p2.y);
+  ctx.closePath();
+  
+  
+    var path = astar.findPath(p1, p2, obstacles);
+  
+    //console.log('maze path ' + path);
+  
+  if (path == null) {
+  		console.log('can not find my way through the maze');
+  } else {
+          ctx.fillStyle="none";
+          ctx.strokeWidth="1";
+  	      ctx.strokeStyle = "#00FF00";
+  
+  		ctx.beginPath();
+  		var p = path;
+  		ctx.moveTo(p.x, p.y);
+  		while (p != null) {
+  			p = p.cameFrom;
+  			if (p == null) {
+  				break;
+  			} else {
+  				ctx.lineTo(p.x, p.y);
+  			}
+  		}
+  		ctx.stroke();
+  }
+ 
+</script>
+
+</body>
+</html>

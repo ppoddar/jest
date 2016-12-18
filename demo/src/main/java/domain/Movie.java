@@ -1,7 +1,11 @@
 package domain;
 
+import java.util.List;
+
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.ManyToMany;
+import javax.persistence.ManyToOne;
 
 @Entity
 public class Movie {
@@ -9,8 +13,13 @@ public class Movie {
     private String id;
     private String title;
     
+    @ManyToOne
+    private Person director;
+    
+    @ManyToMany
+    private List<Actor> actors;
+    
     public Movie() {
-        // TODO Auto-generated constructor stub
     }
 
 }

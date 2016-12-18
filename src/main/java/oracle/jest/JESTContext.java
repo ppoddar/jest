@@ -2,7 +2,10 @@ package oracle.jest;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.metamodel.Metamodel;
 import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.json.JSONObject;
 
@@ -34,6 +37,8 @@ public interface JESTContext {
      */
     public EntityManagerFactory getPersistenceUnit();
     
+    public ServletContext getServletContext();
+
     /**
      * Gets the persistence context.
      * Creates and associates the persistence context if it is not 
@@ -42,7 +47,12 @@ public interface JESTContext {
      * @return
      */
     public EntityManager getPersistenceContext();
+    public Metamodel getPersistenceModel();
+
     
     public ResponseTransformer getResponseTransformer();
+    
+    public HttpServletRequest getRequest();
+    public HttpServletResponse getResponse();
 
 }

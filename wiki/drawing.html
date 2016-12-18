@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+<h1>Represenation of Object Model</h1>
+
+An object model is a graph whose vertices are entities and edges are relations.
+
+An entity is a collection of attributes.
+A relation connects an entity-entity (ineritance), entity-attribute or
+attribute=attribute.
+
+
+<table>
+<th></th>
+<tr>
+<td>Entity</td><td>div</td>
+</tr>
+
+</table>
+An attribute is a viewd as a rectangle.
+An attribute name and type. Two side-by-side divs.
+
+
+An entity is viewed as an rectangle.  
+
+a header.
+attributes arranged vertically.
+
+
+<h1>Placement</h1>
+
+Each vertex is a rectangle with width and height.
+Placement finds a position {x,y} for each entity so that
+<ul>
+<li>link length is low</li>
+<li>no overlap</li>
+<li>natural length is maintained</li>
+</ul>
+
+<h2>Natural Length</h2>
+Consider each entity is connected to each other entity with two springs:
+vertical and horizontal.
+
+Each spring has a natural length. If the entity boxes are further apart than
+natural length, then the spring pulls them closer. If they are colser than
+normal length, then the spring  pushes them farther.
+
+So what is the natural length between two entity?
+
+Assume they are not linked.
+Assume they are all equal dimension.
+Let there be N entities.
+
+let w and h be the average width and height of the boxes. 
+
+dx = (W/sqrt N) - w;
+
+dy = (H/sqrt N) -h
+
+Now some boxes are linked and some are not
+
+for each relation between A and B, natural distance (A,B) reduces by a factor f.
+f depends on kind of link (ineritance or relation). 
+link category may change natural length in different dimension differently.
+
+
+
+<h2>Connectors</h2>
+
+
+ 
+
+
+
+</body>
+</html>

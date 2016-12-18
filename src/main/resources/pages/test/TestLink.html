@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<script src="../scripts/objectGraph.js"></script>
+<script src="../scripts/placement.js"></script>
+<link rel="stylesheet" href="../css/objectgraph.css"></link>
+</head>
+
+<body>
+
+<h3>Shows how links are drawn between HTML elements</h3>
+
+<div id="paper" width="400px" height="400px" border="1px solid black;"
+     style="position:relative">
+  <svg id="link" width="400px" height="400px"  style="position:absolute">
+  </svg>
+</div>
+<script>
+
+var graph = new ObjectGraph();
+
+var source = new Box(100, 100, 50, 50);
+var link = {type:'inheritance'};
+
+var paper = document.getElementById("paper");
+var svg = document.getElementById("link");
+graph.drawBox(source, "fill:blue", svg);
+
+var target = new Box(200, 200, 20, 30);
+var x = [200,  200,  50,   50, 200,  200];
+var y = [200,  000, 200,  000, 150,  110];
+for (var i = 0; i < x.length; i++) {
+	target = new Box(x[i], y[i], 20, 30);
+    graph.drawBox(target, "fill:red", svg);
+    var obstacles = [source, target];
+    graph.drawLink(source, target, link,  obstacles, svg);
+}
+
+</script>
+</body>
+</html>

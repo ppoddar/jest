@@ -1,0 +1,112 @@
+/**
+ * The CSS determines display and positioning style of model and entity 
+ */
+.model {
+	position:relative; /* must be relative for absolute positioning */
+	                   /* of the entities                           */
+	float:left;
+	margin:5px;
+	
+	width :400px;     /* dimesions are required                     */
+	height:400px;
+	
+	border: 1px solid black;
+	
+}
+
+
+
+.entity {
+    position:absolute;      /* must be absolute                         */
+	display:inline-block;   /* must be inline-block                     */
+	border: 1px black solid;
+	margin: 5px;
+}
+
+
+.entity-header {
+    color:white;
+    background: linear-gradient(#3b5998, #8b9dc3); 
+	font-weight:bold;
+}
+
+.attr {
+  display:table-row;
+}
+
+.attr-type[category='basic'] {
+	margin-left:5px;
+	margin-right:5px;
+	margin-top:0px;
+	margin-bottom:4px;
+	
+	font-weight:bold;
+	float:right;
+	overflow:hidden;
+    display:table-cell;
+
+    color:green;
+    
+}
+
+.attr-type[category='lava'] {
+	margin-left:5px;
+	margin-right:5px;
+	margin-top:0px;
+	margin-bottom:4px;
+	
+	font-weight:bold;
+	float:right;
+	overflow:hidden;
+    display:table-cell;
+
+    color:red;
+    
+}
+
+.attr-type {
+	margin-left:5px;
+	margin-right:5px;
+	margin-top:0px;
+	margin-bottom:4px;
+	
+	font-weight:bold;
+	float:right;
+	overflow:hidden;
+    display:table-cell;
+
+    color:blue;
+    
+}
+
+
+
+
+.attr-name {
+	margin-left:5px;
+	margin-right:5px;
+	margin-top:0px;
+	margin-bottom:4px;
+	float:left;
+	overflow:hidden;
+    display:table-cell;
+}
+
+
+
+
+/**
+  style svg elements
+*/
+path[type='inheritance'] {
+	stroke:rgb(0,255,0);
+	stroke-width:1;
+	fill:none;
+}
+
+path[type='relation'] {
+	stroke:rgb(0,0,0);
+	stroke-width:1;
+	fill:none;
+}
+

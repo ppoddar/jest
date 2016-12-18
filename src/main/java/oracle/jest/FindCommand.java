@@ -14,17 +14,18 @@ import org.json.JSONObject;
 
 public class FindCommand extends JESTCommand {
 
-    public FindCommand(ServletContext ctx, HttpServletRequest request, HttpServletResponse response) 
+    public FindCommand(JESTContext ctx) 
         throws ServletException {
-        super(ctx, request, response);
+        super(ctx);
     }
 
 
     @Override
     public void execute() throws ServletException,IOException {
+        HttpServletRequest request = getContext().getRequest();
         String[] splats = request.getPathInfo().split("/");
         String entityTypeName = splats[0];
-        EntityManager em = getPersistenceContext();
+        EntityManager em = getContext().getPersistenceContext();
         EntityType<?> eType = resolveTypeByName(entityTypeName);
         Object pObject = null;
         if (splats.length > 1) {
@@ -41,13 +42,14 @@ public class FindCommand extends JESTCommand {
         }
 
 
+        HttpServletResponse response = getContext().getResponse();
         if (pObject == null) {
             response.setStatus(404);
         } else {
+            ResponseTransformer transfomer = getContext().getResponseTransformer();
+            
+            transfomer.transform(pObject, response);
             response.setStatus(200);
-            ResponseTransformer transfomer = getResponseTransformer();
-            JSONObject json = transfomer.transform(pObject);
-            json.write(response.getWriter());
         }
 
     }

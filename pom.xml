@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+
+	<!-- A maven script to jestify an application to a WAR archive -->
+	<!-- and start a web-enabled application with embedded Tomcat container -->
+	<!-- -->
+	<!-- The application is supplied as a JAR archive -->
+
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>oracle</groupId>
+	<artifactId>jest</artifactId>
+	<packaging>jar</packaging>
+	<version>0.1</version>
+	<name>jest</name>
+	<properties>
+		<project.name>jest</project.name>
+		<project.root.name>jest</project.root.name>
+		<project.version>0.1</project.version>
+		<jee.version>7.0</jee.version>
+		<tomcat.version>8.0.1</tomcat.version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+	<build>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<configuration>
+						<source>1.7</source>
+						<target>1.7</target>
+					</configuration>
+				</plugin>
+
+				<plugin>
+
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>appassembler-maven-plugin</artifactId>
+					<version>1.10</version>
+					<configuration>
+					<!-- names of this configuration are not variable -->
+					<!-- that Ant script uses these constant names    -->
+						<assembleDirectory>target</assembleDirectory>
+						<environmentSetupFileName>app.env</environmentSetupFileName>
+						<generateRepository>true</generateRepository>
+						<repositoryName>repo</repositoryName>
+						<programs>
+							<program>
+								<mainClass>oracle.jest.tomcat.Launcher</mainClass>
+								<id>jest</id>
+							</program>
+						</programs>
+					</configuration>
+					<executions>
+						<execution>
+							<phase>package</phase>
+							<goals>
+								<goal>assemble</goal>
+							</goals>
+						</execution>
+					</executions>
+				</plugin>
+
+
+			</plugins>
+		</pluginManagement>
+
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<excludes>
+					<exclude>pages/jest.html</exclude>
+					<exclude>pages/test/*.*</exclude>
+				</excludes>
+			</resource>
+
+		</resources>
+	</build>
+ 
+	<dependencies>
+		<dependency>
+			<groupId>javax</groupId>
+			<artifactId>javaee-api</artifactId>
+			<version>${jee.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+			<version>20140107</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.tomcat.embed</groupId>
+			<artifactId>tomcat-embed-core</artifactId>
+			<version>${tomcat.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.tomcat.embed</groupId>
+			<artifactId>tomcat-embed-logging-juli</artifactId>
+			<version>${tomcat.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.tomcat</groupId>
+			<artifactId>tomcat-jasper</artifactId>
+			<version>${tomcat.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.tomcat</groupId>
+			<artifactId>tomcat-jasper-el</artifactId>
+			<version>${tomcat.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.tomcat</groupId>
+			<artifactId>tomcat-jsp-api</artifactId>
+			<version>${tomcat.version}</version>
+		</dependency>
+	</dependencies>
+	
+</project>

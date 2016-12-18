@@ -1,5 +1,7 @@
 package oracle.jest;
 
+import javax.servlet.http.HttpServletResponse;
+
 import org.json.JSONObject;
 
 /**
@@ -11,12 +13,13 @@ import org.json.JSONObject;
  */
 public interface ResponseTransformer {
     /**
-     * Transforms the given object to a JSON representation.
+     * Transforms the given object to a representation
+     * and write to given response.
      * 
      * @param pObject can be a persistence instance or type 
-     * @return
+     * or an entire data model
      */
-    JSONObject transform(Object pObject);
-    JSONObject error(Throwable ex);
+    void transform(Object pObject, HttpServletResponse response);
+    
 
 }

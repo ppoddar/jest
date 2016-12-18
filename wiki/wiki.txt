@@ -1,0 +1,38 @@
+JEST
+
+Packaging
+   
+     app.jar - created by dev
+     
+     classes
+       a.class
+       b.class
+       c.class
+     META-INF
+       persistence.xml
+     lib
+       x.jar
+       y.jar
+       
+       
+    
+    jest app.jar --> app.war
+    
+    WEB-INF
+       web.xml *
+       jest.html *
+       resources *
+         css
+         js
+       classes
+       	a.class
+       	b.class
+       	c.class
+     	META-INF
+       		persistence.xml
+     	lib
+       		x.jar
+       		y.jar
+       		jest.jar *
+       		json.jar *
+    

@@ -17,52 +17,25 @@ import javax.servlet.http.HttpServletResponse;
  * @author pinaki poddar
  *
  */
-public abstract class JESTCommand implements Closeable, JESTContext {
-    protected final ServletContext servletContext;
-    protected final HttpServletRequest request;
-    protected final HttpServletResponse response;
+public abstract class JESTCommand implements Closeable {
+    protected final JESTContext context;
 
-    public JESTCommand(ServletContext context, HttpServletRequest request, HttpServletResponse response) throws ServletException {
-        this.servletContext = context;
-        this.request = request;
-        this.response = response;
-        
-        response.setContentType(MIMETYPE_JSON_API);
+    public JESTCommand(JESTContext context) throws ServletException {
+        this.context = context;
+    }
+    
+    public JESTContext getContext() {
+        return context;
     }
 
     public abstract void execute() throws ServletException, IOException;
 
-    public EntityManagerFactory getPersistenceUnit() {
-        return getContextAttribute(PERSISTENCE_UNIT, 
-                EntityManagerFactory.class);
-    }
-
-    public ResponseTransformer getResponseTransformer() {
-        ResponseTransformer t = getContextAttribute(RESPONSE_TRANSFORMER, 
-                ResponseTransformer.class);
-        if (t == null) {
-            t = selectTransformer();
-            setContextAttribute(RESPONSE_TRANSFORMER, t);
-        }
-        return t;
-    }
-
-    public EntityManager getPersistenceContext() {
-        EntityManager em = getContextAttribute(PERSISTENCE_CONTEXT, 
-                EntityManager.class);
-        if (em != null) return em;
-        EntityManagerFactory emf = getPersistenceUnit();
-        em = emf.createEntityManager();
-        servletContext.setAttribute(PERSISTENCE_CONTEXT, em);
-        return em;
-    }
-
     public Metamodel getDomainModel() {
-        return getPersistenceUnit().getMetamodel();
+        return context.getPersistenceUnit().getMetamodel();
     }
 
     ResponseTransformer selectTransformer()  {
-        return new JSONAPITransformer(this);
+        return new JSONAPITransformer(this.context);
         /*
          * String accept = request.getHeader(HEADER_ACCEPT); if
          * (MIMETYPE_JSON_API.equals(accept)) { return new JSONAPITransformer();
@@ -86,7 +59,7 @@ public abstract class JESTCommand implements Closeable, JESTContext {
     }
     
     private <T> T getContextAttribute(String key, Class<T> cls, boolean mustExist) {
-        Object value = servletContext.getAttribute(key);
+        Object value = context.getServletContext().getAttribute(key);
         if (value == null) {
             if (mustExist) {
                 throw new RuntimeException(key + " not found in context");
@@ -106,7 +79,7 @@ public abstract class JESTCommand implements Closeable, JESTContext {
     }
     
     private void setContextAttribute(String key, Object value) {
-        servletContext.setAttribute(key, value);
+        context.getServletContext().setAttribute(key, value);
     }
 
 

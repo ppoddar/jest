@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<script src="../scripts/objectGraph.js"></script>
+<script src="../scripts/placement.js"></script>
+<link rel="stylesheet" href="../css/objectgraph.css"></link>
+</head>
+
+<body>
+
+<h3>Shows how entity is represented with HTML elements</h3>
+
+<div id="paper" width="400px" height="400px" border="1px solid black;"
+     style="position:relative">
+  </svg>
+</div>
+<script>
+
+var graph = new ObjectGraph();
+	var data = {'types':[
+		{'name':'Movie', 
+		 'attributes':[
+		 	{'name':'f1', 'type':'string'},
+		 	{'name':'f2', 'type':'int'}
+		 	]}
+		 ]
+		 	
+	};
+graph.createModel(data,document.getElementById('paper'));
+
+
+
+
+</script>
+</body>
+</html>

@@ -20,25 +20,22 @@
 
 
 	<target name="compile">
-		<mkdir dir="${target.dir}/classes" />
+		<mkdir dir="${target.dir}" />
 		<javac srcdir="${src.dir}" 
-			   destdir="${target.dir}/classes" 
+			   destdir="${target.dir}" 
 			   includeantruntime="false">
 			<classpath refid="compile.classpath" />
 		</javac>
 	</target>
 	
 	<target name="jar" depends="compile">
-		<copy todir="${target.dir}/classes">
-			<fileset dir="${resources.dir}"/>
-		</copy>
 		<echo message="creating ${target.jar}"></echo>
 		<jar destfile="${target.jar}" filesonly="true">
 			<fileset dir="${target.dir}">
-				<include name="classes/**/*"/>
+				<include name="**/*"/>
 			</fileset>
-			<fileset  dir="${basedir}">
-				<include name="lib/*.jar"/>
+			<fileset dir="${resources.dir}">
+				<include name="**/*"/>
 			</fileset>
 		</jar>
 	</target>

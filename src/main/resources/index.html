@@ -2,6 +2,12 @@
 <html>
 <head>
   <title>JEST</title>
+  
+      <script src="./scripts/objectgraph.js"></script>
+    <script src="./scripts/placement.js"></script>
+  
+  <link rel="stylesheet" href="./css/objectgraph.css">
+  
 </head>
 <body>
 <h1>JEST</h1>
@@ -16,12 +22,41 @@ The entity instances are stored in a relational database. The entity definitions
 define a relational schema and entity instances are stored as records
 following that schema.
 <p>
-Click here to see <a href="./pages/d3.html" target="model">D3</a> model  
-<p>
-<iframe src="http://stackoverflow.com/" name="model" frameBorder="0">
-<p>Your browser does not support iframes.</p>
-</iframe>
 
+<input type="button" value="JEST  Demo!" onclick="showObjectModel();">
+
+  
+<div id='canvas' width="400px" height="400px"></canvas></div>
+
+
+
+<script>
+function showObjectModel() {
+
+var xmlhttp = new XMLHttpRequest();
+xmlhttp.onreadystatechange = function() {
+        if (xmlhttp.readyState == XMLHttpRequest.DONE ) {
+           if (xmlhttp.status == 200) {
+               var data = JSON.parse(xmlhttp.responseText);
+               //console.log('AJAX Response:' + JSON.stringify(data,2));
+               var model = new ObjectGraph()
+					.createModel(data, 
+					document.getElementById('canvas'));
+           }
+           else if (xmlhttp.status == 400) {
+              alert('There was an error 400');
+           }
+           else {
+               alert('something else other than 200 was returned');
+           }
+        }
+    };
+
+    xmlhttp.open("GET", "./jest/", true);
+    xmlhttp.send();
+} 
+
+</script>
 
 </body>
 
