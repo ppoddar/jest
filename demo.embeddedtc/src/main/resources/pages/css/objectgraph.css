@@ -106,16 +106,18 @@
 */
 path[type='inheritance'] {
 	stroke:rgb(0,255,0);
-	stroke-width:1;
+	stroke-width:2;
 	fill:none;
-	
 	marker-start: url(#markerCircle);
 	marker-end: url(#markerArrow);
 }
 
 path[type='relation'] {
 	stroke:rgb(0,0,0);
-	stroke-width:1;
+	stroke-width:2;
 	fill:none;
+	
+	marker-start: url(#markerCircle);
+	marker-end: url(#markerArrow);
 }
 

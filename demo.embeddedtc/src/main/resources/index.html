@@ -2,7 +2,9 @@
 <html>
 <head>
   <title>JEST</title>
-  
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>  
       <script src="./pages/scripts/objectgraph.js"></script>
     <script src="./pages/scripts/placement.js"></script>
   
@@ -23,37 +25,28 @@ define a relational schema and entity instances are stored as records
 following that schema.
 <p>
 
-<input type="button" value="JEST  Demo!" onclick="showObjectModel();">
 
+<button id='demo' class="ui-button">JEST Demo</button>
   
-<div id='canvas' width="400px" height="400px"></canvas></div>
+<div id='model' style="width:400px; height:400px;">
+</div>
 
 
 
 <script>
-function showObjectModel() {
 
-var xmlhttp = new XMLHttpRequest();
-xmlhttp.onreadystatechange = function() {
-        if (xmlhttp.readyState == XMLHttpRequest.DONE ) {
-           if (xmlhttp.status == 200) {
-               var data = JSON.parse(xmlhttp.responseText);
-               //console.log('AJAX Response:' + JSON.stringify(data,2));
-               var model = new ObjectGraph()
-					.createModel(data, 
-					document.getElementById('canvas'));
-           }
-           else if (xmlhttp.status == 400) {
-              alert('There was an error 400');
-           }
-           else {
-               alert('something else other than 200 was returned');
-           }
-        }
-    };
+$().ready(function() {
+   $('#demo').click(function(){
+   	showObjectModel("./jest/");})});
 
-    xmlhttp.open("GET", "./jest/", true);
-    xmlhttp.send();
+
+function showObjectModel(url) {
+	$.ajax({url:url})
+	 .done(function(data){
+	    new ObjectGraph().createModel(JSON.parse(data), $('#model'))
+	 }
+	    
+	 );
 } 
 
 </script>

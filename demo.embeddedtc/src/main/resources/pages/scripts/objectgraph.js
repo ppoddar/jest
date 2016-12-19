@@ -26,12 +26,7 @@ const SOUTH = 1;
 const EAST = 2;
 const WEST = 3;
 
-// approximate width and height of each character.
-var ch = 20;
-var cw = 12;
-var margin = 10;
-var h_space = 4*cw;
-var v_space = 1.2*ch;
+const TICK_SIZE = 10;
 
 
 /**
@@ -69,107 +64,51 @@ function ObjectGraph(options) {
 }
 
 /**
- * Creates DOM element to represent an attribute
+ * Creates jQuery DOM element to represent an attribute
  * 
  * @param data
  *            JSON data for the attribute
+ * @param $parent the parent jQuery element           
  * @return the HTML element for an attribute
  */
-ObjectGraph.prototype.createAttribute = function(data) {
-	var attr = document.createElement('div');
-	attr.className += ' attr';
-	var name = this.createTextNode(data['name'], 'attr-name');
-	var type = this.createTextNode(data['type'], 'attr-type');
-	attr.appendChild(name);
-	attr.appendChild(type);
-	
-	setDimension(attr, name.w + type.w + 2*margin + h_space, Math.max(name.h, type.h));
-	
-	return attr;
+ObjectGraph.prototype.createAttribute = function(data, $parent) {
+	var $attr = $('<div/>').addClass(' attr');
+	var $name = $('<span/>').addClass('attr-name').text(data['name']);
+	var $type = $('<span/>').addClass('attr-type').text(data['type']);
+	$attr.append($name, $type);
+	$parent.append($attr);
+	return $attr;
 }
 
-/**
- * Creates a text node inside a span and styles the parent span.
- * 
- * @param text
- *            the text content
- * @param cls
- *            the class of the span to style it
- * @return the span node enclosing a text node
- */
-ObjectGraph.prototype.createTextNode = function(s, cls) {
-	var span = document.createElement('span');
-	var text = document.createTextNode(s);
-	span.appendChild(text);
-	span.className += cls;
-	console.log('width [' + s + ']=' + text.length*cw);
-	setDimension(span, s.length * cw, ch);
-
-	
-	return span;
-};
-
-
 
 /**
- * creates a div for given type. The div contains each attribute div. The class
- * of div is set to 'entity' is CSS.
+ * creates a div for given entity. The div contains each attribute div. The class
+ * of div is set to 'entity' in CSS.
  * 
  * @param data
  *            data for each attribute and name of the type
  * @return The created div element.
  */
 
-ObjectGraph.prototype.createEntity = function(data) {
-	var entity = document.createElement('div');
+ObjectGraph.prototype.createEntity = function(data, $parent) {
+	var $entity = $('<div/>').addClass('entity');
 
-	entity.className += ' entity';
-	entity.name = data['name'];
-	entity.setAttribute('entity', data['name'])
+	$entity.name = data['name'];
+	$entity.attr('name', data['name'])
 
-	var header = this.createEntityHeader(entity.name, 'entity-header');
-	entity.appendChild(header);
-	var w = header.w; var h = header.h;
-
-	var attrs = data['attributes'];
-	for ( var i = 0; i < attrs.length; i++) {
-		var attrDiv = this.createAttribute(attrs[i], entity);
-		entity.appendChild(attrDiv);
-		w = Math.max(w, attrDiv.w);
-		h += attrDiv.h;
-	}
-	setDimension(entity, w,h)
-	console.log('entity ' + entity.name + ' w=' + entity.w + ' h=' + entity.h);
-	 
-	return entity;
-}
-
-/**
- * sets width and height of given element.
- * The element attribute 'w' and 'h' is set.
- * Also el.style.width and el.style.height
- * 
- * @param el an HTML element.
- * @param w width a number in pixel
- * @param h height a number in pixel
- * @return
- */
-function setDimension(el, w, h) {
-	el.setAttribute('w', w);
-	el.setAttribute('h', h);
-	el.w = w; el.h = h;
+	var $header = $('<div/>').addClass('entity-header');
+	var $title  = $("<span/>").text(data['name']);
+	$header.append($title);
+	$entity.append($header);
+	var self = this;
+	$.each(data['attributes'], function(idx, attr) {
+		self.createAttribute(attr, $entity);
+	}); 
 	
-	el.style.width  = w + 'px';
-	el.style.height = h + 'px';
-}
-
-ObjectGraph.prototype.createEntityHeader = function(name, cls) {
-	var header = document.createElement('div');
-	header.className += cls;
-	var title = this.createTextNode(name, cls, header);
-	header.appendChild(title);
-	header.w = title.w; header.h = title.h;
-	return header;
+	// IMPORTANT: to get the dimension unless element is added to DOM
+	$parent.append($entity);
+	
+	return $entity;
 }
 
 /**
@@ -184,167 +123,139 @@ ObjectGraph.prototype.createEntityHeader = function(name, cls) {
  *            child type elements use 'absolute' position.
  * @return
  */
-ObjectGraph.prototype.createModel = function(data, modelDiv) {
+ObjectGraph.prototype.createModel = function(data, $modelDiv) {
 	// a model manifests in two HTML elements. The entities are pure
 	// HTML divisions rendered and laid out by browser. The links are
 	// drawn by the facility as SVG paths.
+	$modelDiv.empty();
 	
-	var entityContainer = document.createElement('div');
-	var linkContainer   = document.createElementNS(SVG_NAMESPACE, "svg");
+	var $entityContainer = $('<div/>').addClass('model');
+	var $linkContainer   = $(document.createElementNS(SVG_NAMESPACE, "svg"));
 	
-
-	modelDiv.className += ' model';
+	$modelDiv.append($entityContainer);
+	$modelDiv.append($linkContainer);
 	
 	// two children entityContainer and linkContainer use absolute
 	// position. So this parent has relative position.
-	modelDiv.style.position = 'relative';
+	$modelDiv.css({position: 'relative'});
 	
-	entityContainer.style.position = 'absolute';
-	entityContainer.id='entityContainer';
-	linkContainer.style.position   = 'absolute';
-	linkContainer.id='linkContainer';
-	
-	
-	
-	var defs = defineArrowStyles();
-	linkContainer.appendChild(defs);
-    
-	modelDiv.appendChild(entityContainer);
-	modelDiv.appendChild(linkContainer);
+	$entityContainer.css({position: 'absolute'}); 
+	$entityContainer.attr('id', 'entityContainer');
+	$linkContainer.css({position: 'absolute', top:0, left:0, 
+		width:$modelDiv.width()+'px', height:$modelDiv.height()+'px'}); 
+	$linkContainer.attr('id', 'linkContainer');
 	
 	
-	var types = data['types'] || [];
-
-	for ( var i = 0; i < types.length; i++) {
-		var entity = this.createEntity(types[i], entityContainer);
-		entityContainer.appendChild(entity);
-	}
-
-	// converts HTML elements to boxes for placement algorithm
-	// the HTML elements must have width/dimension for placement algorithm
-	// and hence must added to DOM by now
-	var entities = modelDiv.querySelectorAll('.entity');
+	var defs = defineArrowStyles($linkContainer);
+	
 	var boxes = [];
-	entities.forEach(function(e) {
-			var box = new Box(0, 0, e.w, e.h);
-			boxes.push(box);
-		});
+	var $entities = [];
+	var self = this;
+	$.each(data['types'] || [], function(idx, type) {
+		var $entity = self.createEntity(type, $entityContainer);
+		var box = new Box(0, 0, $entity.width(), $entity.height());
+		boxes.push(box);
+		$entities.push($entity);
+	});
+	
 
 
 	// resolve links to box indices for placement algorithm
-	var links = data['links'] || [];
 	var linkIndices = [];
-	var self = this;
-	links.forEach(function(link) {
-		var source = self.findEntity(link.source);
-		var target = self.findEntity(link.target);
-		if (source == null || target == null)
-			return;
-		var k1 = [].indexOf.call(entities, source);
-		var k2 = [].indexOf.call(entities, target);
-		if (k1 >= 0 && k2 >= 0) {
-			linkIndices.push(new Link(k1, k2, link.type));
+	$.each(data['links'] || [], function(idx, link) {
+		var k1 = -1; var k2 = -1;
+		for (var j = 0; j < $entities.length; j++) {
+			var e = $entities[j];
+			if (e.name == link.source) {
+				k1 = j;
+			}
+			if (e.name == link.target) {
+				k2 = j;
+			}
+			if (k1 >= 0 && k2 >= 0) {
+				linkIndices.push(new Link(k1, k2, link.type));
+			}
 		}
 	});
 	// run placement algorithm
-	var boundingBox = new Box(0, 0, modelDiv.offsetWidth, 
-			modelDiv.offsetHeight);
+	var boundingBox = new Box(0, 0, $modelDiv.width(), 
+			$modelDiv.height());
 	var placements = new Placement()
 	     .runPlacementAlgorithm(boxes, linkIndices,
 	    		 boundingBox, self.options);
 
 	// assign the placement suggestions to HTML elements and add them to DOM
-	for ( var i = 0; i < entities.length; i++) {
-		entities[i].style.left = '' + placements[i].x + 'px';
-		entities[i].style.top = ''  + placements[i].y + 'px';
+	
+	$('.entity').each(function(i,e){
+		e.style.left = placements[i].x + 'px'
+		e.style.top  = placements[i].y + 'px'
+	})
+	
+	for (var i = 0; i < placements.length; i++) {
+		var p = placements[i];
+		var b = boxes[i];
+		p.x = b.x - TICK_SIZE;
+		p.y = b.y - TICK_SIZE;
+		p.w = b.w + 2*TICK_SIZE;
+		p.h = b.h + 2*TICK_SIZE;
+		
+/*		console.log('placement[' + i + '] ' + 
+				placements[i].x + ' ' + placements[i].y + ' ' + 
+				placements[i].w + ' ' + placements[i].h);
+		console.log('    boxes[' + i + '] ' + 
+				boxes[i].x + ' ' + boxes[i].y + ' ' + 
+				boxes[i].w + ' ' + boxes[i].h);
+*/
 	}
-	console.log('width of element after adding ' + entity.w);
-
-
-	var links = this.drawLinks(boxes, linkIndices, linkContainer);
+	var links = this.drawLinks(placements, linkIndices, linkContainer);
 
 
 };
 
-function defineArrowStyles() {
-	var defs = document.createElementNS(SVG_NAMESPACE, "defs");
+function defineArrowStyles($container) {
+	var defs = $(document.createElementNS(SVG_NAMESPACE, "defs"));
+	$container.append(defs);
 	
-	var marker = document.createElementNS(SVG_NAMESPACE, "marker");
+	var $markerCircle = $(makeSVG('marker', {id:'markerCircle', 
+		markerWidth:8, markerHeight:8, refX:5, refY:5}));
+		
+	defs.append($markerCircle);
 	
-	marker.id='markerCircle';
-	marker.markerWidth=8;
-	marker.markerHeight=8;
-	marker.refX=5;
-	marker.refY=5;
-	var circle = document.createElementNS(SVG_NAMESPACE, "circle");
-	circle.cx = 5; circle.cy = 5; circle.r = 3;
-	circle.style = 'stroke: none; fill:#000000;';
-	marker.appendChild(circle);
+	var circle = makeSVG('circle', {cx:5, cy:5, r:3, 
+		style:'stroke: none; fill:#000000;'});
 	
-	defs.appendChild(marker);
+	$markerCircle.append(circle);
 	
-	marker = document.createElementNS(SVG_NAMESPACE, "marker");
-	marker.id='markerArrow';
-	marker.markerWidth=13;
-	marker.markerHeight=13;
-	marker.refX=2;
-	marker.refY=6;
-	marker.orient='auto';
-	var path = document.createElementNS(SVG_NAMESPACE, "circle");
-	path.d = 'M2,2 L2,11 L10,6 L2,2';
-	path.style = 'fill: #000000;';
-	marker.appendChild(path);
+	var $markerArrow = $(makeSVG('marker', {id:'markerArrow', 
+		markerWidth:13, markerHeight:13, refX:2, refY:6, orient:'auto'}));
 	
-	defs.appendChild(marker);
+	defs.append($markerArrow);
+	
+	var path = makeSVG('path', {d:'M2,2 L2,11 L10,6 L2,2',
+		style:'fill: #000000;'});
+		
+	$markerArrow.append(path);
+	
 	
 	return defs;
 
 }
 
-/**
- * draws set of boxes on given paper HTML element
- * 
- * @param boxes
- * @param paper
- * @return
- */
-/*
- * ObjectGraph.prototype.drawBoxes = function(boxes, paper) { console.log(' ' +
- * boxes.length + ' boxes'); var svg = document.createElementNS(SVG_NAMESPACE,
- * "svg"); paper.appendChild(svg); svg.style.position = 'absolute';
- * svg.style.width = paper.offsetWidth; svg.style.height = paper.offsetHeight;
- * 
- * var style; for ( var i = 0; i < boxes.length; i++) { this.drawBox(boxes[i],
- * style, svg); } };
- */
-/**
- * Draws given box in the given svg element
- * 
- * @param box
- * @param style
- *            string of style parameters
- * @param svg
- * @return
- */
-/*
- * ObjectGraph.prototype.drawBox = function(box, style, svg) { var rect =
- * document.createElementNS(SVG_NAMESPACE, "rect"); svg.appendChild(rect);
- * 
- * rect.setAttribute('x', box.x); rect.setAttribute('y', box.y);
- * rect.setAttribute('width', box.w); rect.setAttribute('height', box.h); if
- * (style !== undefined) rect.setAttribute('style', style);
- * //"fill:blue;stroke:pink;stroke-width:5;fill-opacity:0.1;stroke-opacity:0.9"); };
- */
-
+function makeSVG(tag, attrs) {
+    var el= document.createElementNS(SVG_NAMESPACE, tag);
+    for (var k in attrs)
+        el.setAttribute(k, attrs[k]);
+    return el;
+}
 
 /**
  * 
  */
-ObjectGraph.prototype.drawLinks = function(boxes, links, linkContiner) {
+ObjectGraph.prototype.drawLinks = function(boxes, links, linkContainer) {
 	for ( var i = 0, l = links.length; i < l; i++) {
 		var link = links[i];
 		this.drawLink(boxes[link.source], boxes[link.target], 
-				link, boxes, linkContiner);
+				link, boxes, linkContainer);
 
 	}
 
@@ -419,9 +330,10 @@ ObjectGraph.prototype.drawLink = function(source, target, link, obstacles, svg) 
  * @return an array of 2 Points
  */
 var findJoints = function(source, target, link) {
-	var TICK_SIZE = 10;
-	var startConnector = new Connector(source, joinPoint(source, target, link), TICK_SIZE);
-	var endConnector   = new Connector(target, joinPoint(target, source, link), TICK_SIZE);
+	var startConnector = new Connector(source, 
+			joinPoint(source, target, link), true, TICK_SIZE);
+	var endConnector   = new Connector(target, 
+			joinPoint(target, source, link), false, TICK_SIZE);
 	
 	return [ startConnector, endConnector ];
 };
@@ -450,63 +362,106 @@ var joinPoint = function(source, target, link) {
 	                   WEST, WEST, 
 	                   SOUTH, SOUTH, 
 	                   EAST ];
-
-	if (q < 0 || q >= joinPoints.legth)
+	var dir = 0;
+	if (link.type == 'inheritance') {
+		dir = (theta > 0) ? NORTH : SOUTH;
+	} else if (link.type == 'relation') {
+		dir = (theta > 0 && theta < Math.PI/2) 
+		   || (theta < 3*Math.PI/2 && theta > -Math.PI/2) ? EAST: WEST;
+	} else {
+		throw {message: 'unknown link kind ' + link.type};
+	}
+	if (q < 0 || q >= joinPoints.length)
 		throw {
 			message : 'invalid quadrant ' + q + ' should be between (0,8]'
 		};
 
-	return joinPoints[q];
+	return dir;//joinPoints[q];
 };
+
+
+
+
 
 /**
- * finds an entity of given name by CSS selector.
+ * draws set of boxes on given paper HTML element
  * 
- * @param name
- *            an entity name
+ * @param boxes
+ * @param paper
+ * @return
+ *
+/*/
+  ObjectGraph.prototype.drawBoxes = function(boxes, paper) { 
+	  console.log(' ' + boxes.length + ' boxes'); 
+	  
+	  var svg = document.createElementNS(SVG_NAMESPACE, "svg"); 
+	  
+	  paper.appendChild(svg); svg.style.position = 'absolute';
+      svg.style.width = paper.offsetWidth; 
+      svg.style.height = paper.offsetHeight;
+  
+     var style; for ( var i = 0; i < boxes.length; i++) { this.drawBox(boxes[i],
+     style, svg); 
+     } 
+  };
+ 
+/**
+ * Draws given box in the given svg element
+ * 
+ * @param box
+ * @param style
+ *            string of style parameters
+ * @param svg
  * @return
  */
-ObjectGraph.prototype.findEntity = function(name) {
-	var selector = '[entity=\'' + name + '\']';
-	var e = document.querySelector(selector);
-	return e;
-};
+  ObjectGraph.prototype.drawBox = function(box, style, svg) { 
+	  var rect = makeSVG('rect', {x:box.x, y:box.y, width:box.w, height:box.h});
+  
+      if (style !== undefined) rect.setAttribute('style', style);
+  //"fill:blue;stroke:pink;stroke-width:5;fill-opacity:0.1;stroke-opacity:0.9"); 
+
+	  svg.appendChild(rect);
+
+  };
+ 
 
 
-function Connector(box, dir, tickSize) {
-	this.basePoint = box.PointAt(dir);
+
+
+
+function Connector(box, dir, start, tickSize) {
+	var p0 = box.PointAt(dir);
+	if (start) {
 	if (dir == NORTH) {
-		this.joinPoint = this.basePoint.shift(0, -tickSize);
+		this.basePoint = p0;
+		this.joinPoint = p0.shift(0, -tickSize);
 	} else if (dir == SOUTH) {
-		this.joinPoint = this.basePoint.shift(0, +tickSize);
+		this.basePoint = p0;
+		this.joinPoint = p0.shift(0, +tickSize);
 	} else if (dir == EAST) {
-		this.joinPoint = this.basePoint.shift(+tickSize, 0);
+		this.basePoint = p0;
+		this.joinPoint = p0.shift(+tickSize, 0);
 	} else if (dir == WEST) {
-		this.joinPoint = this.basePoint.shift(-tickSize, 0);
+		this.basePoint = p0;
+		this.joinPoint = p0.shift(-tickSize, 0);
+	}
+	} else {
+		if (dir == NORTH) {
+			this.basePoint = p0.shift(0, -tickSize);
+			this.joinPoint = p0.shift(0, -tickSize);
+		} else if (dir == SOUTH) {
+			this.basePoint = p0.shift(0, +tickSize);
+			this.joinPoint = p0.shift(0, +tickSize);
+		} else if (dir == EAST) {
+			this.basePoint = p0.shift(+tickSize, 0);
+			this.joinPoint = p0.shift(+tickSize, 0);
+		} else if (dir == WEST) {
+			this.basePoint = p0.shift(-tickSize, 0);
+			this.joinPoint = p0.shift(-tickSize, 0);
+		}
 	}
 
 }
 
-Element.prototype.getElementWidth = function() {
-	if (typeof this.clip !== "undefined") {
-		return this.clip.width;
-	} else {
-		if (this.style.pixelWidth) {
-			return this.style.pixelWidth;
-		} else {
-			return this.offsetWidth;
-		}
-	}
-};
-Element.prototype.getElementHeight = function() {
-	if (typeof this.clip !== "undefined") {
-		return this.clip.height;
-	} else {
-		if (this.style.pixelHeight) {
-			return this.style.pixelHeight;
-		} else {
-			return this.offsetHeight;
-		}
-	}
-};
+
 
