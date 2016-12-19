@@ -1,13 +1,14 @@
 /**
  * Calculates position of a set of connected rectangles relative to a bounding box.
  * <p>
- * Each rectangle is specified in terms of immutable width and height. 
- * The rectangle are connected. The connection between rectangle can
+ * Each rectangle is specified with (immutable) dimension (width and height). 
+ * The rectangles are connected. The connection between rectangle can
  * be of different categories.
  * <p>
- * The task is to calculate top-left position of the rectangles  such that 
+ * The task is to calculate top-left position of the rectangles realtive to
+ * top-left corner of a bounding box, such that 
  *   i) no two rectangles overlap 
- *  ii) all rectangles remain within the bounding box 
+ *  ii) all rectangles remain within the a bounding box 
  * iii) the total manhattan distance of the links is minimum 
  *  iv) the spring compression and expansion forces are minimum (see below)
  *
@@ -21,12 +22,12 @@
  * <p>
  * The force-directed algorithm computes spring force on each rectangle exerted by
  * other rectangle. A spring force is exerted even among rectangle that are not linked.
- * The forces cause the rectangle to move unless the movement makes them overlap or
- * cross the bounding box. <br>
+ * Such force causes the disconnected rectangle to move apart.<br>
  * The force-directed algorithm is applied multiple steps, in each step reducing
  * the force multiplier by a damping factor.
  * 
- * 
+ * The width and height of the boxes are approximate and not necessarily same
+ * as width and height of HTML elements they represent.
  * 
  * 
  */
@@ -157,24 +158,29 @@ Placement.prototype.assignRegion = function(box, region) {
 	// x y w h
 	// -----------------------------------------------------------------
 	// first row: boxes have same y and height
-	emptyRegions.push(new Box(region.x, region.y, x, y));
-	emptyRegions.push(new Box(region.x + x, region.y, box.w, y));
-	emptyRegions.push(new Box(region.x + x + box.w, region.y, region.w - x
-			- box.w, y));
+	validateDimensionAndAdd(emptyRegions, region.x,             region.y, x,     y);
+	validateDimensionAndAdd(emptyRegions, region.x + x,         region.y, box.w, y);
+	validateDimensionAndAdd(emptyRegions, region.x + x + box.w, region.y, region.w - x - box.w, y);
+		
+	
 	// middle row: boxes have same y and height
-	emptyRegions.push(new Box(region.x, region.y + y, x, box.h));
-	emptyRegions.push(new Box(region.x + x + box.w, region.y + y, region.w - x
-			- box.w, box.h));
+	validateDimensionAndAdd(emptyRegions, region.x, region.y + y, x, box.h);
+	validateDimensionAndAdd(emptyRegions, region.x + x + box.w, region.y + y, region.w - x - box.w, box.h);
 	// middle row: boxes have same y and height
-	emptyRegions.push(new Box(region.x, region.y + y + box.h, x, region.h - y
-			- box.h));
-	emptyRegions.push(new Box(region.x + x, region.y + y + box.h, box.w,
-			region.h - y - box.h));
-	emptyRegions.push(new Box(region.x + x + box.w, region.y + y + box.h,
-			region.w - x - box.w, region.h - y - box.h));
+	validateDimensionAndAdd(emptyRegions, region.x, region.y + y + box.h, x, region.h - y - box.h);
+	validateDimensionAndAdd(emptyRegions, region.x + x, region.y + y + box.h, box.w, region.h - y - box.h);
+	validateDimensionAndAdd(emptyRegions, region.x + x + box.w, region.y + y + box.h,
+			region.w - x - box.w, region.h - y - box.h);
 
 	return emptyRegions;
 };
+
+function validateDimensionAndAdd(emptyRegions, x, y, w, h) {
+	if (w > 0 && h > 0) {
+		emptyRegions.push(new Box(x,y,w,h))
+	}
+	
+}
 
 /**
  * finds a box among the given regions which can fit the given box.
@@ -364,11 +370,11 @@ Placement.prototype.applySpringForce = function(source, target, force, dir) {
  * @return
  */
 function Box(x, y, w, h) {
-	if (w < 0)
+	if (w <= 0)
 		throw {
 			'message' : 'invalid width ' + w
 		};
-	if (h < 0)
+	if (h <= 0)
 		throw {
 			'message' : 'invalid height ' + h
 		};
@@ -581,14 +587,14 @@ function AStar(start, goal) {
 				}
 			}
 		}
-		console.log('Serach in ' + this.w + ' x ' + this.h + ' point grid with ' 
+		console.log('Search in ' + this.w + ' x ' + this.h + ' point grid with ' 
 				+ nBlocked + ' blocked');
 		var maxTrial = 1000*1000;//(w*h - nBlocked)*1000;
 		var trial = 0;
 		// begin with adding start point to open set, its gScore is 0
 		//
-		// gScore is the minumum cost of reaching a point from start
-		// hCost is a heuriastic cost from a point to end point
+		// gScore is the minimum cost of reaching a point from start
+		// hCost is a heuristic cost from a point to end point
 		// fCost is sum of gCost and hCost
 		var g = this.mapReal2Grid(this.start.x, this.start.y); 
 		g.inOpenSet = true;
@@ -641,7 +647,21 @@ function AStar(start, goal) {
 	var retrace_path = function(current) {
 		var path = [];
 		while (current !== undefined) {
-			path.unshift(current);
+			if (path.length > 1) {
+				p0 = path[path.length-2];
+				p1 = path[path.length-1];
+				if (current.x == p1.x && p1.x == p0.x) {
+					p0.y = current.y;
+					// do not add current
+				} else if (current.y == p1.y && p1.y == p0.y) {
+					p0.x = current.x;
+					// do not add current
+				} else {
+					path.unshift(current);
+				}
+			} else {
+				path.unshift(current);
+			}
 			current = current.cameFrom;
 		}
 		return path;

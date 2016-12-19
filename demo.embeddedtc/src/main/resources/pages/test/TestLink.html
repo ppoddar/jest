@@ -13,7 +13,21 @@
 
 <div id="paper" width="400px" height="400px" border="1px solid black;"
      style="position:relative">
+     
+     
   <svg id="link" width="400px" height="400px"  style="position:absolute">
+     <defs>
+    <marker id="markerCircle" markerWidth="8" markerHeight="8" refX="5" refY="5">
+        <circle cx="5" cy="5" r="3" style="stroke: none; fill:#000000;"/>
+    </marker>
+
+    <marker id="markerArrow" markerWidth="13" markerHeight="13" refX="2" refY="6"
+           orient="auto">
+        <path d="M2,2 L2,11 L10,6 L2,2" style="fill: #000000;" />
+    </marker>
+</defs>
+
+
   </svg>
 </div>
 <script>

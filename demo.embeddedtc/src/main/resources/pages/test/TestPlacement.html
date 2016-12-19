@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<script src="../scripts/objectgraph.js"></script>
+<script src="../scripts/placement.js"></script>
+<link rel="stylesheet" href="../css/objectgraph.css"></link>
+
+</head>
+
+<body>
+<div id='main' width="400px" height="400px">
+
+</div>
+
+<script>
+
+	var data = {'types':[
+		{'name':'Movie', 
+		 'attributes':[
+		 	{'name':'f1', 'type':'string'},
+		 	{'name':'f2', 'type':'int'}
+		 	]},
+		 	
+		{'name':'Actor', 
+		 'attributes':[
+		 	{'name':'f3', 'type':'string'},
+		 	{'name':'f4', 'type':'int'},
+		 	{'name':'f5', 'type':'Movie'}
+		 	]},
+		 	
+		{'name':'Person', 
+		 'attributes':[
+		 	{'name':'name', 'type':'string'}
+		 	]}
+		 	
+		 ],
+		 'links':[
+		   {'source':'Movie', 'target':'Actor','type':'relation'},
+		   {'source':'Actor', 'target':'Person','type':'inheritance'}
+		 ]
+		 	
+	};
+
+
+  var graph = new ObjectGraph();
+  graph.createModel(data, document.getElementById('main'));
+</script>
+
+</body>
+</html>

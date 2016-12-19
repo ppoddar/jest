@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<script src="../scripts/css.js"></script>
+<link rel="stylesheet" href="../css/objectgraph.css"></link>
+<head>
+</head>
+
+<body>
+
+<script>
+  var stylesheetHref = "../css/objectgraph.css";
+  var css = new css();
+  var rule = css.getCSSRule(stylesheetHref, '.entity');
+  console.log('found css rule ' + JSON.stringify(rule));
+</script>
+</body>
+</html>

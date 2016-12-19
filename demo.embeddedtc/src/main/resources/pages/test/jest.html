@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="scripts/objectgraph.js"></script>
+    <script src="scripts/placement.js"></script>
+  
+  <link rel="stylesheet" href="./css/objectgraph.css">
+</head>
+
+
+<body id='body' onload="show()">
+  
+  <div id='canvas'></div>
+
+<script>
+function show() {
+	var data = {'types':[
+		{'name':'Movie', 
+		 'attributes':[
+		 	{'name':'f1', 'type':'string'},
+		 	{'name':'f2', 'type':'int'}
+		 	]},
+		 	
+		{'name':'Actor', 
+		 'attributes':[
+		 	{'name':'f3', 'type':'string'},
+		 	{'name':'f4', 'type':'int'},
+		 	{'name':'f5', 'type':'Movie'}
+		 	]},
+		 	
+		{'name':'Person', 
+		 'attributes':[
+		 	{'name':'name', 'type':'string'}
+		 	]}
+		 	
+		 ],
+		 'links':[
+		   {'source':'Movie', 'target':'Actor','type':'relation'},
+		   {'source':'Actor', 'target':'Person','type':'inheritance'}
+		 ]
+		 	
+	};
+		 	
+	
+	var model = new ObjectGraph()
+		.createModel(data, 
+					document.getElementById('canvas'));
+}
+</script>
+
+
+</body>
+</html>

@@ -19,8 +19,7 @@
 .entity {
     position:absolute;      /* must be absolute                         */
 	display:inline-block;   /* must be inline-block                     */
-	border: 1px black solid;
-	margin: 5px;
+	border: 1px red solid;
 }
 
 
@@ -30,8 +29,15 @@
 	font-weight:bold;
 }
 
+/*
+  Attribute is a dive with two columns: attr-name and attr-type.
+  The columns are placed side-by-side.
+  Each attribute div is placed inside an entity. Entity places each
+  attribute in a single row.
+*/
 .attr {
   display:table-row;
+  border: 1px solid blue;
 }
 
 .attr-type[category='basic'] {
@@ -102,6 +108,9 @@ path[type='inheritance'] {
 	stroke:rgb(0,255,0);
 	stroke-width:1;
 	fill:none;
+	
+	marker-start: url(#markerCircle);
+	marker-end: url(#markerArrow);
 }
 
 path[type='relation'] {

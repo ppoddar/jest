@@ -18,29 +18,39 @@ defaults = {
 }
 var SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
 
-const
-X_AXIS = 1; // X-axis
-const
-Y_AXIS = 2; // Y-axis
+const X_AXIS = 1; // X-axis
+const Y_AXIS = 2; // Y-axis
 
-const
-NORTH = 0;
-const
-SOUTH = 1;
-const
-EAST = 2;
-const
-WEST = 3;
+const NORTH = 0;
+const SOUTH = 1;
+const EAST = 2;
+const WEST = 3;
+
+// approximate width and height of each character.
+var ch = 20;
+var cw = 12;
+var margin = 10;
+var h_space = 4*cw;
+var v_space = 1.2*ch;
+
 
 /**
  * A facility to display an object graph given an entity model. The input is an
- * object model of persistent entities. A persistent entity is described in
- * terms of its attributes and connectivity between entities. An object model is
+ * object model of persistent entities. A persistent entity model is described in
+ * terms of entity attributes and connectivity between entities. An object model is
  * expressed in JSON. <br>
  * This facility creates HTML elements for entities of the input object model.
- * And appends these HTML elements to a given HTML div element. The facility
- * calculate position for HTML elements for an aesthetic graph (see Placement
- * class for details). <br>
+ * And appends these HTML elements to a given HTML div element. 
+ * The facility
+ * calculate absolute position for HTML elements for a graph using a Placement
+ * algorithm. The browser renders the HTML elements  given their positions 
+ * as calculated by Placement algorithm.
+ * The placement algorithm requires dimension of the elements. However, the
+ * width and height of an HTML element as calculated by browser is available
+ * after an element is added to DOM. 
+ * Hence, an approximate width and height of the elements are calculated
+ * based on character width and height before presenting to Placement algorithm. 
+ * <br> 
  * The connections between entities are drawn as SVG paths. A maze-running
  * algorithm finds connection paths.
  * <p>
@@ -63,19 +73,18 @@ function ObjectGraph(options) {
  * 
  * @param data
  *            JSON data for the attribute
- * @param parent
- *            div to which the created attribute element is appended
- * 
  * @return the HTML element for an attribute
  */
-ObjectGraph.prototype.createAttribute = function(data, parent) {
+ObjectGraph.prototype.createAttribute = function(data) {
 	var attr = document.createElement('div');
-
-	this.createTextNode(data['name'], 'attr-name', attr);
-	this.createTextNode(data['type'], 'attr-type', attr);
-
-	parent.appendChild(attr);
-
+	attr.className += ' attr';
+	var name = this.createTextNode(data['name'], 'attr-name');
+	var type = this.createTextNode(data['type'], 'attr-type');
+	attr.appendChild(name);
+	attr.appendChild(type);
+	
+	setDimension(attr, name.w + type.w + 2*margin + h_space, Math.max(name.h, type.h));
+	
 	return attr;
 }
 
@@ -88,16 +97,19 @@ ObjectGraph.prototype.createAttribute = function(data, parent) {
  *            the class of the span to style it
  * @return the span node enclosing a text node
  */
-ObjectGraph.prototype.createTextNode = function(text, cls, parent) {
+ObjectGraph.prototype.createTextNode = function(s, cls) {
 	var span = document.createElement('span');
-	var text = document.createTextNode(text);
+	var text = document.createTextNode(s);
 	span.appendChild(text);
 	span.className += cls;
+	console.log('width [' + s + ']=' + text.length*cw);
+	setDimension(span, s.length * cw, ch);
 
-	parent.appendChild(span);
-
+	
 	return span;
-}
+};
+
+
 
 /**
  * creates a div for given type. The div contains each attribute div. The class
@@ -105,36 +117,58 @@ ObjectGraph.prototype.createTextNode = function(text, cls, parent) {
  * 
  * @param data
  *            data for each attribute and name of the type
- * @param parent
- *            the parent DIV to add the created div.
  * @return The created div element.
  */
 
-ObjectGraph.prototype.createEntity = function(data, parent) {
-	var attrs = data['attributes'];
+ObjectGraph.prototype.createEntity = function(data) {
 	var entity = document.createElement('div');
-	parent.appendChild(entity);
 
 	entity.className += ' entity';
 	entity.name = data['name'];
 	entity.setAttribute('entity', data['name'])
 
-	this.createEntityHeader(entity.name, 'entity-header', entity);
+	var header = this.createEntityHeader(entity.name, 'entity-header');
+	entity.appendChild(header);
+	var w = header.w; var h = header.h;
 
+	var attrs = data['attributes'];
 	for ( var i = 0; i < attrs.length; i++) {
 		var attrDiv = this.createAttribute(attrs[i], entity);
+		entity.appendChild(attrDiv);
+		w = Math.max(w, attrDiv.w);
+		h += attrDiv.h;
 	}
-
+	setDimension(entity, w,h)
+	console.log('entity ' + entity.name + ' w=' + entity.w + ' h=' + entity.h);
+	 
 	return entity;
 }
 
-ObjectGraph.prototype.createEntityHeader = function(name, cls, parent) {
+/**
+ * sets width and height of given element.
+ * The element attribute 'w' and 'h' is set.
+ * Also el.style.width and el.style.height
+ * 
+ * @param el an HTML element.
+ * @param w width a number in pixel
+ * @param h height a number in pixel
+ * @return
+ */
+function setDimension(el, w, h) {
+	el.setAttribute('w', w);
+	el.setAttribute('h', h);
+	el.w = w; el.h = h;
+	
+	el.style.width  = w + 'px';
+	el.style.height = h + 'px';
+}
+
+ObjectGraph.prototype.createEntityHeader = function(name, cls) {
 	var header = document.createElement('div');
 	header.className += cls;
 	var title = this.createTextNode(name, cls, header);
-
-	parent.appendChild(header);
-
+	header.appendChild(title);
+	header.w = title.w; header.h = title.h;
 	return header;
 }
 
@@ -151,26 +185,51 @@ ObjectGraph.prototype.createEntityHeader = function(name, cls, parent) {
  * @return
  */
 ObjectGraph.prototype.createModel = function(data, modelDiv) {
-	modelDiv.className += ' model';
-	modelDiv.style.position = 'relative';
+	// a model manifests in two HTML elements. The entities are pure
+	// HTML divisions rendered and laid out by browser. The links are
+	// drawn by the facility as SVG paths.
+	
+	var entityContainer = document.createElement('div');
+	var linkContainer   = document.createElementNS(SVG_NAMESPACE, "svg");
+	
 
+	modelDiv.className += ' model';
+	
+	// two children entityContainer and linkContainer use absolute
+	// position. So this parent has relative position.
+	modelDiv.style.position = 'relative';
+	
+	entityContainer.style.position = 'absolute';
+	entityContainer.id='entityContainer';
+	linkContainer.style.position   = 'absolute';
+	linkContainer.id='linkContainer';
+	
+	
+	
+	var defs = defineArrowStyles();
+	linkContainer.appendChild(defs);
+    
+	modelDiv.appendChild(entityContainer);
+	modelDiv.appendChild(linkContainer);
+	
+	
 	var types = data['types'] || [];
 
 	for ( var i = 0; i < types.length; i++) {
-		var entity = this.createEntity(types[i], modelDiv);
+		var entity = this.createEntity(types[i], entityContainer);
+		entityContainer.appendChild(entity);
 	}
 
 	// converts HTML elements to boxes for placement algorithm
+	// the HTML elements must have width/dimension for placement algorithm
+	// and hence must added to DOM by now
 	var entities = modelDiv.querySelectorAll('.entity');
 	var boxes = [];
 	entities.forEach(function(e) {
-		// use offset parameters for numeric data
-			var box = new Box(e.offsetLeft, e.offsetTop, e.offsetWidth,
-					e.offsetHeight);
+			var box = new Box(0, 0, e.w, e.h);
 			boxes.push(box);
 		});
 
-	// this.drawBoxes(boxes, modelDiv);
 
 	// resolve links to box indices for placement algorithm
 	var links = data['links'] || [];
@@ -188,100 +247,104 @@ ObjectGraph.prototype.createModel = function(data, modelDiv) {
 		}
 	});
 	// run placement algorithm
-	var placements = new Placement().runPlacementAlgorithm(boxes, linkIndices,
-			new Box(modelDiv.offsetLeft, modelDiv.offsetTop,
-					modelDiv.offsetWidth, modelDiv.offsetHeight), self.options);
+	var boundingBox = new Box(0, 0, modelDiv.offsetWidth, 
+			modelDiv.offsetHeight);
+	var placements = new Placement()
+	     .runPlacementAlgorithm(boxes, linkIndices,
+	    		 boundingBox, self.options);
 
-	// assign the placement suggestions to HTML elements
+	// assign the placement suggestions to HTML elements and add them to DOM
 	for ( var i = 0; i < entities.length; i++) {
 		entities[i].style.left = '' + placements[i].x + 'px';
-		entities[i].style.top = '' + placements[i].y + 'px';
-
+		entities[i].style.top = ''  + placements[i].y + 'px';
 	}
-	// recompute box locations
+	console.log('width of element after adding ' + entity.w);
 
-	boxes = [];
-	entities.forEach(function(e) {
-		// use offset parameters for numeric data
-			var box = new Box(e.offsetLeft, e.offsetTop, e.offsetWidth,
-					e.offsetHeight);
-			boxes.push(box);
-		});
-	// this.drawBoxes(boxes, modelDiv);
 
-	var links = this.drawLinks(boxes, linkIndices, modelDiv);
+	var links = this.drawLinks(boxes, linkIndices, linkContainer);
 
-	// var nodes = document.querySelectorAll('.entity');
-	// nodes.forEach(function(node) {
-	// node.addEventListener('click', handleEvent, true);
-	// node.addEventListener('drag', handleEvent, true);
-	// node.addEventListener('dragstart', handleEvent, true);
-	// node.addEventListener('dragend', handleEvent, true);
-	// });
 
-	return modelDiv;
 };
 
+function defineArrowStyles() {
+	var defs = document.createElementNS(SVG_NAMESPACE, "defs");
+	
+	var marker = document.createElementNS(SVG_NAMESPACE, "marker");
+	
+	marker.id='markerCircle';
+	marker.markerWidth=8;
+	marker.markerHeight=8;
+	marker.refX=5;
+	marker.refY=5;
+	var circle = document.createElementNS(SVG_NAMESPACE, "circle");
+	circle.cx = 5; circle.cy = 5; circle.r = 3;
+	circle.style = 'stroke: none; fill:#000000;';
+	marker.appendChild(circle);
+	
+	defs.appendChild(marker);
+	
+	marker = document.createElementNS(SVG_NAMESPACE, "marker");
+	marker.id='markerArrow';
+	marker.markerWidth=13;
+	marker.markerHeight=13;
+	marker.refX=2;
+	marker.refY=6;
+	marker.orient='auto';
+	var path = document.createElementNS(SVG_NAMESPACE, "circle");
+	path.d = 'M2,2 L2,11 L10,6 L2,2';
+	path.style = 'fill: #000000;';
+	marker.appendChild(path);
+	
+	defs.appendChild(marker);
+	
+	return defs;
+
+}
+
 /**
- * draws set of boxes on given paper HTML element 
+ * draws set of boxes on given paper HTML element
+ * 
  * @param boxes
  * @param paper
  * @return
  */
-ObjectGraph.prototype.drawBoxes = function(boxes, paper) {
-	console.log(' ' + boxes.length + ' boxes');
-	var svg = document.createElementNS(SVG_NAMESPACE, "svg");
-	paper.appendChild(svg);
-	svg.style.position = 'absolute';
-	svg.style.width = paper.offsetWidth;
-	svg.style.height = paper.offsetHeight;
-	
-	var style;
-	for ( var i = 0; i < boxes.length; i++) {
-		this.drawBox(boxes[i], style, svg);
-	}
-};
-
+/*
+ * ObjectGraph.prototype.drawBoxes = function(boxes, paper) { console.log(' ' +
+ * boxes.length + ' boxes'); var svg = document.createElementNS(SVG_NAMESPACE,
+ * "svg"); paper.appendChild(svg); svg.style.position = 'absolute';
+ * svg.style.width = paper.offsetWidth; svg.style.height = paper.offsetHeight;
+ * 
+ * var style; for ( var i = 0; i < boxes.length; i++) { this.drawBox(boxes[i],
+ * style, svg); } };
+ */
 /**
  * Draws given box in the given svg element
+ * 
  * @param box
- * @param style string of style parameters
+ * @param style
+ *            string of style parameters
  * @param svg
  * @return
  */
-ObjectGraph.prototype.drawBox = function(box, style, svg) {
-	var rect = document.createElementNS(SVG_NAMESPACE, "rect");
-	svg.appendChild(rect);
-
-	rect.setAttribute('x', box.x);
-	rect.setAttribute('y', box.y);
-	rect.setAttribute('width', box.w);
-	rect.setAttribute('height', box.h);
-	if (style !== undefined)
-	rect.setAttribute('style', style);
-						//"fill:blue;stroke:pink;stroke-width:5;fill-opacity:0.1;stroke-opacity:0.9");
-	
-};
-
+/*
+ * ObjectGraph.prototype.drawBox = function(box, style, svg) { var rect =
+ * document.createElementNS(SVG_NAMESPACE, "rect"); svg.appendChild(rect);
+ * 
+ * rect.setAttribute('x', box.x); rect.setAttribute('y', box.y);
+ * rect.setAttribute('width', box.w); rect.setAttribute('height', box.h); if
+ * (style !== undefined) rect.setAttribute('style', style);
+ * //"fill:blue;stroke:pink;stroke-width:5;fill-opacity:0.1;stroke-opacity:0.9"); };
+ */
 
 
 /**
  * 
  */
-ObjectGraph.prototype.drawLinks = function(boxes, links, paper) {
-	var svg = document.createElementNS(SVG_NAMESPACE, "svg");
-	paper.appendChild(svg);
-	svg.style.position = 'absolute';
-	svg.style.width = paper.offsetWidth;
-	svg.style.height = paper.offsetHeight;
+ObjectGraph.prototype.drawLinks = function(boxes, links, linkContiner) {
 	for ( var i = 0, l = links.length; i < l; i++) {
 		var link = links[i];
-		var source = boxes[link.source];
-		var target = boxes[link.target];
-		console.log('draw link from ' + source + '->' + target + ' of '
-				+ link.type);
-
-		this.drawLink(source, target, link, boxes, svg);
+		this.drawLink(boxes[link.source], boxes[link.target], 
+				link, boxes, linkContiner);
 
 	}
 
@@ -307,26 +370,9 @@ ObjectGraph.prototype.drawLink = function(source, target, link, obstacles, svg) 
 		};
 
 	var line = document.createElementNS(SVG_NAMESPACE, "path");
-	svg.appendChild(line);
 
 	var connectors = findJoints(source, target, link);
 
-	/*
-	var start = joinPoints[0];
-	var end = joinPoints[1];
-	var c1 = document.createElementNS(SVG_NAMESPACE, "circle");
-	var c2 = document.createElementNS(SVG_NAMESPACE, "circle");
-	c1.setAttribute('cx', start.x);
-	c1.setAttribute('cy', start.y);
-	c1.setAttribute('r', 5);
-	c1.setAttribute('fill', 'red');
-	c2.setAttribute('cx', end.x);
-	c2.setAttribute('cy', end.y);
-	c2.setAttribute('r', 5);
-	c2.setAttribute('fill', 'green');
-	svg.appendChild(c1);
-	svg.appendChild(c2);
-    */
 	
 	var startPoint = connectors[0].joinPoint;
 	var endPoint   = connectors[1].joinPoint;
@@ -338,36 +384,38 @@ ObjectGraph.prototype.drawLink = function(source, target, link, obstacles, svg) 
 		return;
 	}
 	var svgPath = '';
-	svgPath = 'M ' + connectors[0].basePoint.x + ' ' + connectors[0].basePoint.y 
+	svgPath = 'M' + connectors[0].basePoint.x + ' ' + connectors[0].basePoint.y 
 	        + ' L' + connectors[0].joinPoint.x + ' ' + connectors[0].joinPoint.y;
 	for (var i = 0; i < path.length; i++) {
-		svgPath +=  ' L ' + path[i].x + ' ' + path[i].y;
+		svgPath +=  ' L' + path[i].x + ' ' + path[i].y;
 	}
-	svgPath += ' L ' + connectors[1].joinPoint.x + ' ' + connectors[1].joinPoint.y
-             + ' L ' + connectors[1].basePoint.x + ' ' + connectors[1].basePoint.y;
+	svgPath += ' L' + connectors[1].basePoint.x + ' ' + connectors[1].basePoint.y;
 	
 	line.setAttribute('d', svgPath);
 	// Use CSS style defined as line[type='xxx'] where xxx is the link type
 	line.setAttribute('type', link.type);
-
-}
+	
+	svg.appendChild(line);
+};
 
 /**
  * given two boxes and a directed link, find the coordinates on the source and
  * target box where the link should start and terminate.
  * 
- * The slope of the link is calculated using arctan function. Then the
- * arctan function value is quantized to one of 8 quadrant w.r.t. source. 
- * Based on the quadrant, the connection will exit source box via one of
- * NORTH, SOUTH EAST or WEST direction.
+ * The slope of the link is calculated using arctan function. Then the arctan
+ * function value is quantized to one of 8 quadrant w.r.t. source. Based on the
+ * quadrant, the connection will exit source box via one of NORTH, SOUTH EAST or
+ * WEST direction.
  * 
  * 
  * 
  * @param source
- *            the box for source HTML element. Must have top-left and width height.
+ *            the box for source HTML element. Must have top-left and width
+ *            height.
  * @param target
- *            the box for target HTML element. Must have top-left and width height.
- *            
+ *            the box for target HTML element. Must have top-left and width
+ *            height.
+ * 
  * @return an array of 2 Points
  */
 var findJoints = function(source, target, link) {
@@ -376,7 +424,7 @@ var findJoints = function(source, target, link) {
 	var endConnector   = new Connector(target, joinPoint(target, source, link), TICK_SIZE);
 	
 	return [ startConnector, endConnector ];
-}
+};
 
 /**
  * calculates the points on the periphery of the source which is the join point
@@ -409,7 +457,7 @@ var joinPoint = function(source, target, link) {
 		};
 
 	return joinPoints[q];
-}
+};
 
 /**
  * finds an entity of given name by CSS selector.
@@ -422,7 +470,7 @@ ObjectGraph.prototype.findEntity = function(name) {
 	var selector = '[entity=\'' + name + '\']';
 	var e = document.querySelector(selector);
 	return e;
-}
+};
 
 
 function Connector(box, dir, tickSize) {
@@ -438,3 +486,27 @@ function Connector(box, dir, tickSize) {
 	}
 
 }
+
+Element.prototype.getElementWidth = function() {
+	if (typeof this.clip !== "undefined") {
+		return this.clip.width;
+	} else {
+		if (this.style.pixelWidth) {
+			return this.style.pixelWidth;
+		} else {
+			return this.offsetWidth;
+		}
+	}
+};
+Element.prototype.getElementHeight = function() {
+	if (typeof this.clip !== "undefined") {
+		return this.clip.height;
+	} else {
+		if (this.style.pixelHeight) {
+			return this.style.pixelHeight;
+		} else {
+			return this.offsetHeight;
+		}
+	}
+};
+
