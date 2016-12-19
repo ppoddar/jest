@@ -16,8 +16,11 @@ It uses embedded Derby, so no need to start any database.
 
 ## Project Layout
 
+```
 jest/
-    runtime => This is the JEST library code. No dependency on tomcat here.
-    demo.domain => JPA domain model with persistence.xml
-    demo.embeddedtc => Shows how to launch embedded Tomcat and configure JEST
-
+  |-- runtime           (JEST runtime library code. No dependency on tomcat here)
+  | 
+  |--demo.domain        (JPA domain model with persistence.xml)
+  |  
+  |--demo.embeddedtc    (Shows how to launch embedded Tomcat and configure JEST)
+```
