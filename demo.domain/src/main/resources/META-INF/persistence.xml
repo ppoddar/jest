@@ -4,18 +4,23 @@
 	<!-- Unit used for development or deployment environment -->
 	<persistence-unit name="app">
 	
-	     <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
+		<provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
 
 		<class>domain.Movie</class>
 		<class>domain.Person</class>
 		<class>domain.Actor</class>
 
 		<properties>
+			<!-- Use these properties if you want to use Postgress SQL.
+
 			<property name="javax.persistence.jdbc.driver" value="org.postgresql.Driver" />
 			<property name="javax.persistence.jdbc.url" value="jdbc:postgresql://localhost:5432/proverb" />
 			<property name="javax.persistence.jdbc.user" value="pg" />
 			<property name="javax.persistence.jdbc.password" value="passw0rd" />
-
+			-->
+			<!-- In-memory Derby SPecific Properties -->
+			<property name="javax.persistence.jdbc.driver" value="org.apache.derby.jdbc.EmbeddedDriver" />
+			<property name="javax.persistence.jdbc.url" value="jdbc:derby:memory:proverb;create=true" />
 
 		</properties>
 
