@@ -60,6 +60,7 @@
                              also adding the project build directory -->
                         <classpath/>
                         <argument>oracle.jest.demo.embeddedtc.Launcher</argument>
+                        <argument>${port.number}</argument>
                     </arguments>
                 </configuration>
             </plugin>
