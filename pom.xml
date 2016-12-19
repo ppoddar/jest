@@ -2,12 +2,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
-
-	<!-- A maven script to jestify an application to a WAR archive -->
-	<!-- and start a web-enabled application with embedded Tomcat container -->
-	<!-- -->
-	<!-- The application is supplied as a JAR archive -->
-
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>oracle</groupId>
 	<artifactId>jest</artifactId>
@@ -41,34 +35,6 @@
 				</plugin>
 
 				<plugin>
-
-					<groupId>org.codehaus.mojo</groupId>
-					<artifactId>appassembler-maven-plugin</artifactId>
-					<version>1.10</version>
-					<configuration>
-					<!-- names of this configuration are not variable -->
-					<!-- that Ant script uses these constant names    -->
-						<assembleDirectory>target</assembleDirectory>
-						<environmentSetupFileName>app.env</environmentSetupFileName>
-						<generateRepository>true</generateRepository>
-						<repositoryName>repo</repositoryName>
-						<programs>
-							<program>
-								<mainClass>oracle.jest.demo.embeddedtc.Launcher</mainClass>
-								<id>jest</id>
-							</program>
-						</programs>
-					</configuration>
-					<executions>
-						<execution>
-							<phase>package</phase>
-							<goals>
-								<goal>assemble</goal>
-							</goals>
-						</execution>
-					</executions>
-				</plugin>
-				<plugin>
 					<groupId>org.codehaus.mojo</groupId>
 					<artifactId>exec-maven-plugin</artifactId>
 					<version>1.5.0</version>
@@ -79,10 +45,6 @@
 		<resources>
 			<resource>
 				<directory>src/main/resources</directory>
-				<excludes>
-					<exclude>pages/jest.html</exclude>
-					<exclude>pages/test/*.*</exclude>
-				</excludes>
 			</resource>
 
 		</resources>
@@ -136,11 +98,5 @@
 		</dependencies>
 
 	</dependencyManagement>
-	<dependencies>
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-		</dependency>
-	</dependencies>
 
 </project>

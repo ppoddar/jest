@@ -13,11 +13,9 @@ import oracle.jest.JESTServlet;
 public class Launcher {
 
     public static void main(String[] args) throws Exception {
-        System.err.println("hello jest");
-        
         Tomcat tomcat = new Tomcat();
         
-        int webPort = 8090;
+        int webPort = args.length == 1 ? Integer.valueOf(args[0]) : 8090;
         
         tomcat.setPort(webPort);
         
@@ -26,16 +24,6 @@ public class Launcher {
         
         Tomcat.addServlet(ctx, "jest", JESTServlet.class.getName());
         ctx.addServletMapping("/jest/*", "jest");
-//        File additionalWebinfClasses = new File("../demo.domain/target/classes");
-//        WebResourceRoot resources = new StandardRoot(ctx);
-//
-//        resources.addPreResources(new DirResourceSet(
-//                resources,
-//                "/WEB-INF/classes",
-//                additionalWebinfClasses.getAbsolutePath(),
-//                "/"));
-//
-//        ctx.setResources(resources);
 
         ctx.setPreemptiveAuthentication(false);
         
